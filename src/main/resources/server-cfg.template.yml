@@ -1,0 +1,28 @@
+server:
+  port: 80
+  handler-num: 4
+  per-worker-num: 8
+  worker-keep-live-time: 2H
+  open-resource: true
+  open-controller: true
+  connect-time-max: 15S
+  local-resource-path: [ D:\myservice\HTTPSERVER\webapps ]
+  controller-package: [top.yqingyu.httpserver.controller]
+
+transfer:
+  request:
+    parse-buffer-size: 1KB
+    max-header-size: 128KB
+    max-body-size: 200MB
+  response:
+    send-buf-size: 2MB
+
+file-compress:
+  open: true
+  max-single-file-compress-size: 128MB
+  compress-cache-pool:
+    open: true
+    max-file-cache-size: 1.5GB
+
+session:
+  session-timeout: 24H

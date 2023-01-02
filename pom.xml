@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+
+    <properties>
+
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+        <java.version>17</java.version>
+
+
+        <package.type>release</package.type>
+<!--                <package.type>ossrh</package.type>-->
+
+    </properties>
+    <dependencies>
+        <dependency>
+            <groupId>top.yqingyu</groupId>
+            <artifactId>commons-qy</artifactId>
+            <version>1.8.3</version>
+        </dependency>
+    </dependencies>
+
+
+
+
+    <!--gav信息-->
+    <groupId>top.yqingyu</groupId>
+    <artifactId>QyHttpServer</artifactId>
+    <!--需要特别注意,你上传的是SNAPSHOT仓库,所以此处版本号后缀必须带SNAPSHOT-->
+    <version>1.8.3</version>
+
+    <!--项目信息...-->
+
+    <!--开源协议...-->
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <!--开发者信息-->
+    <developers>
+        <developer>
+            <id>Severus</id>
+            <name>SeverusQy</name>
+            <email>yangyongji123@live.com</email>
+            <roles>
+                <role>Project Manager</role>
+                <role>Architect</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+    </developers>
+
+    <!--项目在github或其它托管平台的地址-->
+    <scm>
+        <connection>https://gitee.com/vqingyu/App.git</connection>
+        <developerConnection>scm:git:ssh://git@gitee.com:vqingyu/commons-qy.git</developerConnection>
+        <url>https://github.com/2357457057/QyTools</url>
+    </scm>
+
+    <name>commons-qy</name>
+    <description>common tools package</description>
+    <url>https://github.com/2357457057/QyTools</url>
+
+    <profiles>
+        <profile>
+            <!--注意,此id必须与setting.xml中指定的一致,不要自作聪明改它名字-->
+            <id>${package.type}</id>
+
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <distributionManagement>
+                <snapshotRepository>
+                    <!--注意,此id必须与setting.xml中指定的一致-->
+                    <id>${package.type}</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${package.type}</id>
+                    <url>https://s01.oss.sonatype.org/content/repositories/releases/</url>
+                </repository>
+            </distributionManagement>
+
+            <build>
+                <!--发布到中央SNAPSHOT仓库插件-->
+                <plugins>
+                    <!--                    SNAPSHOT版本插件-->
+<!--                                                            <plugin>
+                                                                <groupId>org.sonatype.plugins</groupId>
+                                                                <artifactId>nexus-staging-maven-plugin</artifactId>
+                                                                <version>1.6.7</version>
+                                                                <extensions>true</extensions>
+                                                                <configuration>
+                                                                    <serverId>ossrh</serverId>
+                                                                    <nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
+                                                                    <autoReleaseAfterClose>true</autoReleaseAfterClose>
+                                                                </configuration>
+                                                            </plugin>-->
+
+                    <!--release版本插件-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-release-plugin</artifactId>
+                        <version>2.5.3</version>
+                        <configuration>
+                            <autoVersionSubmodules>true</autoVersionSubmodules>
+                            <useReleaseProfile>false</useReleaseProfile>
+                            <releaseProfiles>release</releaseProfiles>
+                            <goals>deploy</goals>
+                        </configuration>
+                    </plugin>
+
+                    <!--生成源码插件-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <version>2.2.1</version>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--生成API文档插件-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <version>2.9.1</version>
+                        <configuration>
+                            <additionalparam>-Xdoclint:none</additionalparam>
+
+                            <charset>UTF-8</charset><!-- utf-8读取文件 -->
+                            <encoding>UTF-8</encoding><!-- utf-8进行编码代码 -->
+                            <docencoding>UTF-8</docencoding><!-- utf-8进行编码文档 -->
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <!--gpg插件-->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>1.5</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                </plugins>
+            </build>
+
+
+        </profile>
+
+    </profiles>
+</project>
