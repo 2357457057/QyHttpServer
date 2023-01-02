@@ -170,6 +170,7 @@ public class HttpEventHandler extends EventHandler {
 
 
     class SocketChannelMonitor implements Runnable {
+        private static final Logger log = LoggerFactory.getLogger(SocketChannelMonitor.class);
         @Override
         public void run() {
             while (true) {
@@ -185,6 +186,7 @@ public class HttpEventHandler extends EventHandler {
                             socketChannel.close();
                         }
                     } catch (Exception e) {
+                        SOCKET_CHANNELS.remove(i);
                         log.error("断链异常", e);
                     }
 
