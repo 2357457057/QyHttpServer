@@ -171,25 +171,37 @@ public class HttpEventHandler extends EventHandler {
 
     class SocketChannelMonitor implements Runnable {
         private static final Logger log = LoggerFactory.getLogger(SocketChannelMonitor.class);
+
         @Override
         public void run() {
             while (true) {
                 LocalDateTime a = LocalDateTime.now();
                 SOCKET_CHANNELS.forEach((i, s) -> {
+                    SocketChannel socketChannel = null;
+                    LocalDateTime b = null;
+                    Boolean end = null;
                     try {
-                        LocalDateTime b = s.get("LocalDateTime", LocalDateTime.class);
-                        Boolean end = s.get("isResponseEnd", Boolean.class);
-                        SocketChannel socketChannel = s.get("SocketChannel", SocketChannel.class);
+                        socketChannel = s.get("SocketChannel", SocketChannel.class);
+                        b = s.get("LocalDateTime", LocalDateTime.class);
+                        end = s.get("isResponseEnd", Boolean.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
                         if (between > connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             SOCKET_CHANNELS.remove(i);
                             socketChannel.close();
+                            log.debug("满足关闭条件-关闭channel hash: {}", i);
                         }
                     } catch (Exception e) {
                         SOCKET_CHANNELS.remove(i);
-                        log.error("断链异常", e);
+                        if (socketChannel != null) {
+                            try {
+                                socketChannel.close();
+                                log.error("断链异常-关闭channel hash: {}", i);
+                            } catch (IOException ex) {
+                                log.error("关闭异常 hash: {}", i, ex);
+                            }
+                        }
+                        log.error("断链异常 hash: {} , acceptTime: {} ,end: {} ,channel: {}", i, b, end, s, e);
                     }
-
                 });
                 try {
                     Thread.sleep(1000);
