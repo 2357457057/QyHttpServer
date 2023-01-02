@@ -18,6 +18,7 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static top.yqingyu.httpserver.compoment.DoRequest.*;
 import static top.yqingyu.httpserver.compoment.DoResponse.*;
@@ -37,6 +38,7 @@ public class HttpEventHandler extends EventHandler {
 
     private static final OperatingRecorder<Integer> SOCKET_CHANNEL_RECORD = OperatingRecorder.createNormalRecorder(1024L * 1024 * 2);
     static final OperatingRecorder<Integer> SOCKET_CHANNEL_ACK = OperatingRecorder.createAckRecorder(10L);
+    private static final AtomicInteger Monitor  = new AtomicInteger(1);
     public static int port;
     public static int handlerNumber;
     public static int perHandlerWorker;
@@ -47,7 +49,7 @@ public class HttpEventHandler extends EventHandler {
         super(selector);
         SocketChannelMonitor monitor = new SocketChannelMonitor();
         Thread th = new Thread(monitor);
-        th.setName("Monitor" + Thread.currentThread().getName());
+        th.setName("Monitor-Handler" + Monitor.getAndIncrement());
         th.setDaemon(true);
         th.start();
     }
