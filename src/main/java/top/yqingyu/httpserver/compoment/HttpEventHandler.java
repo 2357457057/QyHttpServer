@@ -138,13 +138,18 @@ public class HttpEventHandler extends EventHandler {
     public void read(Selector selector, SocketChannel socketChannel) throws Exception {
         socketChannel.register(selector, SelectionKey.OP_WRITE);
         int i = socketChannel.hashCode();
-        SOCKET_CHANNELS.get(i).put("LocalDateTime", LocalDateTime.now());
-//        READ_POOL.submit(new DoRequest(socketChannel, QUEUE));
-//        WRITE_POOL.submit(new DoResponse(QUEUE, selector));
-        DoRequest doRequest = new DoRequest(socketChannel, QUEUE);
-        doRequest.call();
-        DoResponse doResponse = new DoResponse(QUEUE, selector);//,SOCKET_CHANNEL_ACK);
-        doResponse.call();
+        try {
+            SOCKET_CHANNELS.get(i).put("LocalDateTime", LocalDateTime.now());
+            SOCKET_CHANNELS.get(i).put("isResponseEnd", Boolean.FALSE);
+            DoRequest doRequest = new DoRequest(socketChannel, QUEUE);
+            doRequest.call();
+            DoResponse doResponse = new DoResponse(QUEUE, selector);//,SOCKET_CHANNEL_ACK);
+            doResponse.call();
+            SOCKET_CHANNELS.get(i).put("isResponseEnd", Boolean.TRUE);
+        } catch (Exception e) {
+            SOCKET_CHANNELS.get(i).put("isResponseEnd", Boolean.TRUE);
+            throw e;
+        }
     }
 
 
@@ -172,9 +177,10 @@ public class HttpEventHandler extends EventHandler {
                 SOCKET_CHANNELS.forEach((i, s) -> {
                     try {
                         LocalDateTime b = s.get("LocalDateTime", LocalDateTime.class);
+                        Boolean end = s.get("isResponseEnd", Boolean.class);
                         SocketChannel socketChannel = s.get("SocketChannel", SocketChannel.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
-                        if (between > connectTimeMax && !socketChannel.isConnectionPending()) {
+                        if (between > connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             SOCKET_CHANNELS.remove(i);
                             socketChannel.close();
                         }
