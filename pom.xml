@@ -24,7 +24,7 @@
         <dependency>
             <groupId>top.yqingyu</groupId>
             <artifactId>commons-qy</artifactId>
-            <version>1.8.4</version>
+            <version>1.8.5</version>
         </dependency>
     </dependencies>
 
@@ -35,7 +35,7 @@
     <groupId>top.yqingyu</groupId>
     <artifactId>QyHttpServer</artifactId>
     <!--需要特别注意,你上传的是SNAPSHOT仓库,所以此处版本号后缀必须带SNAPSHOT-->
-    <version>1.8.4</version>
+    <version>1.8.5</version>
 
     <!--项目信息...-->
 
