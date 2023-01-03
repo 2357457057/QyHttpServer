@@ -24,7 +24,7 @@
         <dependency>
             <groupId>top.yqingyu</groupId>
             <artifactId>commons-qy</artifactId>
-            <version>1.8.3</version>
+            <version>1.8.4</version>
         </dependency>
     </dependencies>
 
@@ -63,14 +63,14 @@
 
     <!--项目在github或其它托管平台的地址-->
     <scm>
-        <connection>https://gitee.com/vqingyu/App.git</connection>
-        <developerConnection>scm:git:ssh://git@gitee.com:vqingyu/commons-qy.git</developerConnection>
-        <url>https://github.com/2357457057/QyTools</url>
+        <connection>https://github.com/2357457057/QyHttpServer.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com:2357457057/QyHttpServer.git</developerConnection>
+        <url>https://github.com/2357457057/QyHttpServer</url>
     </scm>
 
-    <name>commons-qy</name>
-    <description>common tools package</description>
-    <url>https://github.com/2357457057/QyTools</url>
+    <name>QyHttpServer</name>
+    <description>simple http server</description>
+    <url>https://github.com/2357457057/QyHttpServer</url>
 
     <profiles>
         <profile>
