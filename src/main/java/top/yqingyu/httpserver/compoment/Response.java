@@ -138,7 +138,7 @@ public class Response implements HttpAction {
 
     public Response putHeaderDate(ZonedDateTime ldt) {
         String s = HTTP_FORMATTER.format(ldt);
-        header.put("Date", LocalDateTimeUtil.formatHttpTime(s));
+        header.put("Date", formatHttpTime(s));
         return this;
     }
 
@@ -218,6 +218,30 @@ public class Response implements HttpAction {
         return sb.toString();
     }
 
+    public static String formatHttpTime(String str) {
+
+        return str
+                .replace("周一", "Mon")
+                .replace("周二", "Tue")
+                .replace("周三", "Wed")
+                .replace("周四", "Thu")
+                .replace("周五", "Fri")
+                .replace("周六", "Sat")
+                .replace("周日", "Sun")
+                .replace("1月", "Jan")
+                .replace("2月", "Feb")
+                .replace("3月", "Mar")
+                .replace("4月", "Apr")
+                .replace("5月", "May")
+                .replace("6月", "Jun")
+                .replace("7月", "Jul")
+                .replace("8月", "Aug")
+                .replace("9月", "Sep")
+                .replace("10月", "Oct")
+                .replace("11月", "Nov")
+                .replace("12月", "Dec");
+
+    }
 
     public String toJsonString() {
         return JSON.toJSONString(this);
