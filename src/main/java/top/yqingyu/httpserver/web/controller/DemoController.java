@@ -1,11 +1,13 @@
 package top.yqingyu.httpserver.web.controller;
 
+import com.alibaba.fastjson2.JSONObject;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.compoment.*;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.LocalDateTimeUtil;
 
 import java.time.ZonedDateTime;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * @author YYJ
@@ -17,6 +19,7 @@ import java.time.ZonedDateTime;
 @QyController(path = "qy_demo")
 public class DemoController {
 
+    static final AtomicLong l = new AtomicLong();
 
     @QyController(path = "testSessionAndCookie", method = {HttpMethod.GET})
     public String demo3(Request req, Response resp) {
@@ -66,5 +69,12 @@ public class DemoController {
         sb.append("<h2>").append("demo2").append("</h2>");
         sb.append(LocalDateTimeUtil.HTTP_FORMATTER.format(ZonedDateTime.now()));
         return sb.toString();
+    }
+
+    @QyController(path = "demo3", method = {HttpMethod.GET})
+    public JSONObject demo2() {
+        JSONObject object = new JSONObject();
+        object.put("key", l.getAndIncrement());
+        return object;
     }
 }

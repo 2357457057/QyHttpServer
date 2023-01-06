@@ -7,7 +7,7 @@ server:
   open-controller: true
   connect-time-max: 15S
   local-resource-path: [ D:\myservice\HTTPSERVER\webapps ]
-  controller-package: [top.yqingyu.httpserver.controller]
+  controller-package: [top.yqingyu.httpserver.web.controller]
 
 transfer:
   request:

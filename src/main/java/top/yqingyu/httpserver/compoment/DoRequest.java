@@ -80,8 +80,7 @@ class DoRequest implements Callable<Object> {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            log.debug(JSON.toJSONString(httpAction));
-            //处理完毕需要需丢掉SINGLE中的记录
+            if (httpAction != null) log.debug(JSON.toJSONString(httpAction));
             log.debug("{}出 cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         }
         return null;
@@ -105,6 +104,8 @@ class DoRequest implements Callable<Object> {
         request.setHost(remoteAddress.getHostString());
         // 头部是否已解析
         boolean flag = false;
+        AtomicInteger breakTimes = new AtomicInteger();
+        k:
         do {
             int currentStep = enumerator.getAndIncrement();
             byte[] temp = new byte[0];
@@ -130,6 +131,10 @@ class DoRequest implements Callable<Object> {
                 request.setParseEnd();
                 break;
                 //当报文总长度超出 DEFAULT_BUF_LENGTH
+            } else if (currentStep == 0 && currentLength == 0) {
+                enumerator.set(0);
+                if (breakTimes.getAndIncrement() < 3)
+                    break k;
             } else {
                 all = ArrayUtil.addAll(all, temp);
 
@@ -236,10 +241,8 @@ class DoRequest implements Callable<Object> {
             for (int j = 0; j < split.length; j++) {
 
                 String[] urlParamKV = split[j].split("=");
-                if (urlParamKV.length == 2)
-                    request.putUrlParam(urlParamKV[0], urlParamKV[1]);
-                else
-                    request.putUrlParam("NoKey_" + j, split[j]);
+                if (urlParamKV.length == 2) request.putUrlParam(urlParamKV[0], urlParamKV[1]);
+                else request.putUrlParam("NoKey_" + j, split[j]);
             }
         }
         for (byte[] bytes : info$header) {
@@ -280,8 +283,7 @@ class DoRequest implements Callable<Object> {
                                 String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
                                 MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
                                 multipartFileStack.push(multipartFile);
-                                if (bytes.size() == 2)
-                                    multipartFileStack.peek().write(bytes.get(1));
+                                if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
                             }
 
                         }

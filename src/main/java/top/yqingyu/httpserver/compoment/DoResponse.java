@@ -80,12 +80,10 @@ class DoResponse implements Callable<Object> {
 
     private static final Logger log = LoggerFactory.getLogger(DoResponse.class);
 
-//    private final OperatingRecorder<Integer> SOCKET_CHANNEL_ACK;
 
     public DoResponse(LinkedBlockingQueue<Object> QUEUE, Selector selector) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
         this.QUEUE = QUEUE;
         this.selector = selector;
-//        this.SOCKET_CHANNEL_ACK = SOCKET_CHANNEL_ACK;
     }
 
     /**
@@ -108,6 +106,8 @@ class DoResponse implements Callable<Object> {
                 Request request = httpEventEntity.getRequest();
                 Response response = httpEventEntity.getResponse();
 
+                if (request == null && response == null)
+                    return null;
 
                 if (response == null)
                     response = new Response();
@@ -134,30 +134,10 @@ class DoResponse implements Callable<Object> {
             socketChannel.register(selector, SelectionKey.OP_READ);
             log.debug("{} cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         } catch (NullPointerException e) {
-            socketChannel.shutdownInput();
-            socketChannel.shutdownOutput();
             socketChannel.close();
         } catch (Exception e) {
             log.error("", e);
-            socketChannel.shutdownInput();
-            socketChannel.shutdownOutput();
             socketChannel.close();
-        } finally {
-//            if (socketChannel != null){
-//                int i = socketChannel.hashCode();
-//                try {
-//
-//                    SOCKET_CHANNEL_ACK.addAck(i);
-//                    SOCKET_CHANNEL_ACK.ack(socketChannel.hashCode());
-//
-//                } catch (RebuildSelectorException e) {
-//                    if (SOCKET_CHANNEL_ACK.isAckOk(i)) {
-//                        socketChannel.close();
-//                        SOCKET_CHANNEL_ACK.removeAck(i);
-//                        log.debug("单通道请求达上限关闭通道");
-//                    }
-//                }
-//            }
         }
         return null;
     }
