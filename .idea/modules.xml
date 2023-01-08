@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/QyHttpServer.iml" filepath="$PROJECT_DIR$/.idea/QyHttpServer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/QyHttpServer.iml" filepath="$PROJECT_DIR$/QyHttpServer.iml" />
     </modules>
   </component>
 </project>
