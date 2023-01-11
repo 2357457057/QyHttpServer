@@ -2,6 +2,7 @@ package top.yqingyu.httpserver.compoment;
 
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.StringUtil;
+import top.yqingyu.common.utils.UnameUtil;
 import top.yqingyu.common.utils.YamlUtil;
 
 import java.io.Serial;
@@ -179,7 +180,7 @@ public class ContentType implements Serializable {
     public static ContentType parseContentType(String resourceUrl) {
         String[] s;
 
-        if (YamlUtil.isWindows())
+        if (UnameUtil.isWindows())
             s = resourceUrl.split("\\\\");
         else
             s = resourceUrl.split("/");

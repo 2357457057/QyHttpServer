@@ -6,6 +6,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.asm.impl.MethodParamGetter;
+import top.yqingyu.common.utils.ResourceUtil;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.exception.HttpException;
 import top.yqingyu.common.qydata.DataMap;
@@ -43,7 +44,7 @@ public class LocationMapping {
     static final String[] FILE_SUFFIX = {".html", "index.html", "index.htm"};
 
     static void loadingFileResource(String rootPath) {
-        HashMap<String, String> mapping = YamlUtil.getFilePathMapping(rootPath);
+        HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(rootPath);
         FILE_RESOURCE_MAPPING.putAll(mapping);
         log.debug("loading  {} resource mapping", rootPath);
     }
