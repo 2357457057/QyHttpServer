@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static top.yqingyu.httpserver.compoment.HttpEventHandler.resourceReloadingTime;
 
@@ -45,29 +46,35 @@ public class LocationMapping {
 
     static final String[] FILE_SUFFIX = {".html", "index.html", "index.htm"};
 
-    static {
-        new Thread(() -> {
-            while (Thread.interrupted()) {
-                try {
-                    Thread.sleep(resourceReloadingTime);
-                } catch (InterruptedException ignored) {
-                }
-                ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
-                for (String s : RootPathArray) {
-                    HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(s);
-                    map.putAll(mapping);
-                }
-                FILE_RESOURCE_MAPPING = map;
-                log.debug("静态资源重载完成");
-            }
-        }).start();
-    }
+    static AtomicReference<Thread> thread = new AtomicReference<>();
 
     static void loadingFileResource(String rootPath) {
         HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(rootPath);
         FILE_RESOURCE_MAPPING.putAll(mapping);
         RootPathArray.add(rootPath);
         log.debug("loading  {} resource mapping", rootPath);
+
+        if (thread.get() == null) {
+            Thread th = new Thread(() -> {
+                while (Thread.interrupted()) {
+                    try {
+                        Thread.sleep(resourceReloadingTime);
+                    } catch (InterruptedException ignored) {
+                    }
+                    ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+                    for (String s : RootPathArray) {
+                        HashMap<String, String> pathMapping = ResourceUtil.getFilePathMapping(s);
+                        map.putAll(pathMapping);
+                    }
+                    FILE_RESOURCE_MAPPING = map;
+                    log.debug("静态资源重载完成");
+                }
+            });
+            thread.set(th);
+            th.setDaemon(true);
+            th.setName("rec-reload");
+            th.start();
+        }
     }
 
     static void loadingBeanResource(String packageName) {
