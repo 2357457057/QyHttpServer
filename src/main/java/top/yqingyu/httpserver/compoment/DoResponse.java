@@ -292,7 +292,7 @@ class DoResponse implements Callable<Object> {
             }
         }
 
-        log.debug("Response: {}", response.toJsonString());
+        log.trace("Response: {}", response.toJsonString());
     }
 
 }
