@@ -38,6 +38,7 @@ public class HttpEventHandler extends EventHandler {
 
     private static final OperatingRecorder<Integer> SOCKET_CHANNEL_RECORD = OperatingRecorder.createNormalRecorder(1024L * 1024 * 2);
     static final OperatingRecorder<Integer> SOCKET_CHANNEL_ACK = OperatingRecorder.createAckRecorder(10L);
+    static long resourceReloadingTime;
     private static final AtomicInteger Monitor  = new AtomicInteger(1);
     public static int port;
     public static int handlerNumber;
@@ -75,6 +76,7 @@ public class HttpEventHandler extends EventHandler {
                 handlerNumber = server.getIntValue("handler-num", 4);
                 perHandlerWorker = server.getIntValue("per-worker-num", 4);
                 Long workerKeepLiveTime = server.$2MILLS("worker-keep-live-time", UnitUtil.$2MILLS("2H"));
+                resourceReloadingTime = server.$2MILLS("resource-reloading-time", UnitUtil.$2MILLS("30S"));
                 connectTimeMax = server.$2MILLS("connect-time-max", UnitUtil.$2MILLS("15S"));
                 boolean open_resource = server.getBooleanValue("open-resource", true);
                 boolean open_controller = server.getBooleanValue("open-controller", true);

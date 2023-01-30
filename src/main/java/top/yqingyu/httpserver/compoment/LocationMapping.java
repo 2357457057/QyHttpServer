@@ -12,7 +12,6 @@ import top.yqingyu.httpserver.exception.HttpException;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ClazzUtil;
 import top.yqingyu.common.utils.StringUtil;
-import top.yqingyu.common.utils.YamlUtil;
 
 import java.io.File;
 import java.lang.reflect.*;
@@ -21,6 +20,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static top.yqingyu.httpserver.compoment.HttpEventHandler.resourceReloadingTime;
 
 /**
  * @author YYJ
@@ -33,7 +34,8 @@ public class LocationMapping {
 
     private static final Logger log = LoggerFactory.getLogger(LocationMapping.class);
 
-    public static final ConcurrentHashMap<String, String> FILE_RESOURCE_MAPPING = new ConcurrentHashMap<>();
+    public static ConcurrentHashMap<String, String> FILE_RESOURCE_MAPPING = new ConcurrentHashMap<>();
+    public static List<String> RootPathArray = new ArrayList<>();
     static final ConcurrentHashMap<String, String> FILE_CACHING = new ConcurrentHashMap<>();
 
     static final ConcurrentHashMap<String, Bean> BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
@@ -43,9 +45,28 @@ public class LocationMapping {
 
     static final String[] FILE_SUFFIX = {".html", "index.html", "index.htm"};
 
+    static {
+        new Thread(() -> {
+            while (Thread.interrupted()) {
+                try {
+                    Thread.sleep(resourceReloadingTime);
+                } catch (InterruptedException ignored) {
+                }
+                ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
+                for (String s : RootPathArray) {
+                    HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(s);
+                    map.putAll(mapping);
+                }
+                FILE_RESOURCE_MAPPING = map;
+                log.trace("静态资源重载完成");
+            }
+        }).start();
+    }
+
     static void loadingFileResource(String rootPath) {
         HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(rootPath);
         FILE_RESOURCE_MAPPING.putAll(mapping);
+        RootPathArray.add(rootPath);
         log.debug("loading  {} resource mapping", rootPath);
     }
 
@@ -155,36 +176,11 @@ public class LocationMapping {
                     .setStatue_code(stateCode);
 
             if (ContentType.VIDEO_MP4.equals(contentType)) {
-                response.putHeaderContentRanges(0,1);
+                response.putHeaderContentRanges(0, 1);
             }
             response.setFile_body(file);
             response.setAssemble(true);
         }
-    }
-
-    static String[] fillUrl(String url, String s, Response response) {
-
-        for (String fileSuffix : FILE_SUFFIX) {
-            if (StringUtil.isNotBlank(s))
-                return new String[]{url, s};
-            if (StringUtils.isBlank(s)) {
-                s = FILE_RESOURCE_MAPPING.get(url + fileSuffix);
-                if (StringUtil.isNotBlank(s))
-                    url += fileSuffix;
-            }
-            if (StringUtils.isBlank(s)) {
-                s = FILE_RESOURCE_MAPPING.get(url + "/" + fileSuffix);
-                if (StringUtils.isNotBlank(s)) {
-                    url = url + "/" + fileSuffix;
-                    if (url.indexOf("/") != 0)
-                        url = "/" + url;
-                    response
-                            .setStatue_code("301")
-                            .putHeaderRedirect(url);
-                }
-            }
-        }
-        return new String[]{url, s};
     }
 
     static void beanResourceMapping(Request request, Response response) {
@@ -337,6 +333,30 @@ public class LocationMapping {
 
     }
 
+    static String[] fillUrl(String url, String s, Response response) {
+
+        for (String fileSuffix : FILE_SUFFIX) {
+            if (StringUtil.isNotBlank(s))
+                return new String[]{url, s};
+            if (StringUtils.isBlank(s)) {
+                s = FILE_RESOURCE_MAPPING.get(url + fileSuffix);
+                if (StringUtil.isNotBlank(s))
+                    url += fileSuffix;
+            }
+            if (StringUtils.isBlank(s)) {
+                s = FILE_RESOURCE_MAPPING.get(url + "/" + fileSuffix);
+                if (StringUtils.isNotBlank(s)) {
+                    url = url + "/" + fileSuffix;
+                    if (url.indexOf("/") != 0)
+                        url = "/" + url;
+                    response
+                            .setStatue_code("301")
+                            .putHeaderRedirect(url);
+                }
+            }
+        }
+        return new String[]{url, s};
+    }
 
     static void matchHttpMethod(Bean bean, Request request) throws HttpException.MethodNotSupposedException {
         top.yqingyu.httpserver.compoment.HttpMethod[] httpMethods = bean.getHttpMethods();
