@@ -34,10 +34,10 @@ public class LocationMapping {
     private static final Logger log = LoggerFactory.getLogger(LocationMapping.class);
 
     public static final ConcurrentHashMap<String, String> FILE_RESOURCE_MAPPING = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, String> FILE_CACHING = new ConcurrentHashMap<>();
 
     static final ConcurrentHashMap<String, Bean> BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
     static final ConcurrentHashMap<String, Bean> MULTIPART_BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
-    static final ConcurrentHashMap<String, String> FILE_CACHING = new ConcurrentHashMap<>();
 
     static final String FORM = "{\"body\"}";
 
@@ -155,7 +155,7 @@ public class LocationMapping {
                     .setStatue_code(stateCode);
 
             if (ContentType.VIDEO_MP4.equals(contentType)) {
-                response.putHeaderContentRanges();
+                response.putHeaderContentRanges(0,1);
             }
             response.setFile_body(file);
             response.setAssemble(true);

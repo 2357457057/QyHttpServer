@@ -6,6 +6,7 @@ import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.common.utils.LocalDateTimeUtil;
+import top.yqingyu.httpserver.Version;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -76,7 +77,7 @@ public class Response implements HttpAction {
     }
 
     public Response putHeaderServer() {
-        header.put("Server", "QyHttpServer2.3");
+        header.put("Server", Version.SERVER_VERSION);
         return this;
     }
 
@@ -103,8 +104,8 @@ public class Response implements HttpAction {
         return this;
     }
 
-    public Response putHeaderContentRanges() {
-        header.put("Content-Ranges", "bytes=0-1");
+    public Response putHeaderContentRanges(long start, long end) {
+        header.put("Content-Ranges", "bytes=" + start + "-" + end);
         return this;
     }
 

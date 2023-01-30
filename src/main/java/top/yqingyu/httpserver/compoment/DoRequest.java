@@ -80,8 +80,8 @@ class DoRequest implements Callable<Object> {
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            if (httpAction != null) log.debug(JSON.toJSONString(httpAction));
-            log.debug("{}出 cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
+            if (httpAction != null) log.trace(JSON.toJSONString(httpAction));
+            log.trace("{}出 cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         }
         return null;
     }
