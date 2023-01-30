@@ -176,7 +176,7 @@ public class HttpEventHandler extends EventHandler {
 
         @Override
         public void run() {
-            while (true) {
+            while (Thread.interrupted()) {
                 LocalDateTime a = LocalDateTime.now();
                 SOCKET_CHANNELS.forEach((i, s) -> {
                     SocketChannel socketChannel = null;
@@ -190,14 +190,14 @@ public class HttpEventHandler extends EventHandler {
                         if (between > connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             SOCKET_CHANNELS.remove(i);
                             socketChannel.close();
-                            log.debug("满足关闭条件-关闭channel hash: {}", i);
+                            log.trace("满足关闭条件-关闭channel hash: {}", i);
                         }
                     } catch (Exception e) {
                         SOCKET_CHANNELS.remove(i);
                         if (socketChannel != null) {
                             try {
                                 socketChannel.close();
-                                log.error("断链异常-关闭channel hash: {}", i);
+                                log.trace("断链异常-关闭channel hash: {}", i);
                             } catch (IOException ex) {
                                 log.error("关闭异常 hash: {}", i, ex);
                             }

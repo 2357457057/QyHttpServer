@@ -132,7 +132,7 @@ class DoResponse implements Callable<Object> {
                 doResponse(resp, socketChannel);
             } while (httpEventEntity.isNotEnd());
             socketChannel.register(selector, SelectionKey.OP_READ);
-            log.debug("{} cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
+            log.trace("{} cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         } catch (NullPointerException e) {
             socketChannel.close();
         } catch (Exception e) {
