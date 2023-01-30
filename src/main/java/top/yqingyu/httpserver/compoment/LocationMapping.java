@@ -56,7 +56,7 @@ public class LocationMapping {
 
         if (thread.get() == null) {
             Thread th = new Thread(() -> {
-                while (Thread.interrupted()) {
+                while (!Thread.interrupted()) {
                     try {
                         Thread.sleep(resourceReloadingTime);
                     } catch (InterruptedException ignored) {
