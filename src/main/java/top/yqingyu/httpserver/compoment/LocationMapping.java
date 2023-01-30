@@ -58,7 +58,7 @@ public class LocationMapping {
                     map.putAll(mapping);
                 }
                 FILE_RESOURCE_MAPPING = map;
-                log.trace("静态资源重载完成");
+                log.debug("静态资源重载完成");
             }
         }).start();
     }
