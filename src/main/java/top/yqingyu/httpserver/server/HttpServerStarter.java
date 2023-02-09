@@ -1,17 +1,20 @@
 package top.yqingyu.httpserver.server;
 
 import org.apache.commons.lang3.StringUtils;
-import top.yqingyu.common.nio$server.CreateServer;
 import top.yqingyu.httpserver.compoment.HttpEventHandler;
+import top.yqingyu.httpserver.compoment.HttpEventHandlerV2;
+import top.yqingyu.httpserver.compoment.ServerConfig;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+
+import static top.yqingyu.httpserver.compoment.ServerConfig.*;
 
 /**
  * @author YYJ
  * @version 1.0.0
  * @ClassName top.yqingyu.httpserver.server.HttpServer
- * @description  简易Http服务
+ * @description 简易Http服务
  * @createTime 2022年09月09日 20:35:00
  */
 public class HttpServerStarter {
@@ -29,14 +32,30 @@ public class HttpServerStarter {
     }
 
     public static void main(String[] args) throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        SERVER2();
+    }
 
+    public static void SERVER2() throws IOException {
         banner();
-        CreateServer
+        top.yqingyu.common.server$aio
+                .CreateServer
+                .create()
+                .setServerName(SERVER_NAME)
+                .setThreadNo(32)
+                .setHandler(new HttpEventHandlerV2())
+                .bind(port)
+                .start();
+    }
+
+    public static void SERVER1() throws IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
+        banner();
+        top.yqingyu.common.server$nio
+                .CreateServer
                 .createDefault(SERVER_NAME)
                 .implEvent(HttpEventHandler.class)
                 .loadingEventResource()
-                .defaultFixRouter(HttpEventHandler.handlerNumber,HttpEventHandler.perHandlerWorker)
-                .listenPort(HttpEventHandler.port)
+                .defaultFixRouter(handlerNumber, perHandlerWorker)
+                .listenPort(port)
                 .start();
     }
 

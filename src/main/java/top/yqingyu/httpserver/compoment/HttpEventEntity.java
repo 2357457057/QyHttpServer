@@ -1,6 +1,7 @@
 package top.yqingyu.httpserver.compoment;
 
-import java.nio.channels.SocketChannel;
+import top.yqingyu.common.bean.NetChannel;
+
 
 /**
  * @author YYJ
@@ -12,12 +13,12 @@ import java.nio.channels.SocketChannel;
 class HttpEventEntity {
     private Request request;
     private Response response;
-    private final SocketChannel socketChannel;
+    private final NetChannel netChannel;
 
     private final boolean notEnd;
 
-    public HttpEventEntity(SocketChannel socketChannel, boolean end) {
-        this.socketChannel = socketChannel;
+    public HttpEventEntity(NetChannel netChannel, boolean end) {
+        this.netChannel = netChannel;
         this.notEnd = end;
     }
 
@@ -37,8 +38,8 @@ class HttpEventEntity {
         this.response = response;
     }
 
-    public SocketChannel getSocketChannel() {
-        return socketChannel;
+    public NetChannel getnetChannel() {
+        return netChannel;
     }
 
     public boolean isNotEnd() {

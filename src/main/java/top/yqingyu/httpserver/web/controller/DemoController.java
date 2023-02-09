@@ -1,6 +1,8 @@
 package top.yqingyu.httpserver.web.controller;
 
 import com.alibaba.fastjson2.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.compoment.*;
 import top.yqingyu.common.qydata.DataMap;
@@ -19,6 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 @QyController(path = "qy_demo")
 public class DemoController {
 
+    private static final Logger logger = LoggerFactory.getLogger(DemoController.class);
     static final AtomicLong l = new AtomicLong();
 
     @QyController(path = "testSessionAndCookie", method = {HttpMethod.GET})
@@ -44,8 +47,9 @@ public class DemoController {
         String age = (String) session.get("age");
 
         String test = req.getCookie("test");
-
-        return "cookie: " + age + test + "<br>Session: " + name + LocalDateTimeUtil.HTTP_FORMATTER.format(ZonedDateTime.now());
+        test = "cookie: " + age + test + "<br>Session: " + name + LocalDateTimeUtil.HTTP_FORMATTER.format(ZonedDateTime.now());
+        logger.info(test);
+        return test;
     }
 
 

@@ -4,9 +4,11 @@ import cn.hutool.core.date.LocalDateTimeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.common.utils.IoUtil;
+import top.yqingyu.common.utils.StringUtil;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -37,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class DoResponse implements Callable<Object> {
 
-    private final LinkedBlockingQueue<Object> QUEUE;
+    //    private final LinkedBlockingQueue<Object> QUEUE;
     private final Selector selector;
 
 
@@ -79,11 +81,12 @@ class DoResponse implements Callable<Object> {
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
 
     private static final Logger log = LoggerFactory.getLogger(DoResponse.class);
+    HttpEventEntity httpEventEntity;
 
 
-    public DoResponse(LinkedBlockingQueue<Object> QUEUE, Selector selector) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
-        this.QUEUE = QUEUE;
+    public DoResponse(HttpEventEntity httpEventEntity, Selector selector) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
         this.selector = selector;
+        this.httpEventEntity = httpEventEntity;
     }
 
     /**
@@ -94,50 +97,51 @@ class DoResponse implements Callable<Object> {
     @SuppressWarnings("all")
     public Object call() throws Exception {
 
-        HttpEventEntity httpEventEntity;
-        SocketChannel socketChannel = null;
+        NetChannel netChannel = null;
         LocalDateTime now = LocalDateTime.now();
         try {
-            do {
-                httpEventEntity = (HttpEventEntity) QUEUE.take();
+            netChannel = httpEventEntity.getnetChannel();
 
-                socketChannel = httpEventEntity.getSocketChannel();
+            Request request = httpEventEntity.getRequest();
+            Response response = httpEventEntity.getResponse();
 
-                Request request = httpEventEntity.getRequest();
-                Response response = httpEventEntity.getResponse();
+            if (request == null && response == null) {
+                handlerV2W.completed(-1, handlerV2);
+                return null;
+            } else if (request != null && response == null && StringUtil.isBlank(request.getUrl())) {
+                handlerV2W.completed(-1, handlerV2);
+                return null;
+            }
 
-                if (request == null && response == null)
-                    return null;
-
-                if (response == null)
-                    response = new Response();
-                if (request == null) {
-                    request = new Request();
-                }
-
-
-                AtomicReference<Response> resp = new AtomicReference<>();
-                resp.set(response);
-                response.setHttpVersion(HttpVersion.V_1_1);
-                response.putHeaderDate(ZonedDateTime.now());
+            if (response == null)
+                response = new Response();
+            if (request == null) {
+                request = new Request();
+            }
 
 
-                //响应初始化，寻找本地资源 已组装完成的消息会跳过
-                initResponse(request, resp);
+            AtomicReference<Response> resp = new AtomicReference<>();
+            resp.set(response);
+            response.setHttpVersion(HttpVersion.V_1_1);
+            response.putHeaderDate(ZonedDateTime.now());
 
-                //压缩
-                if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(resp.get().gainHeaderContentType()))
-                    compress(request, resp);
 
-                doResponse(resp, socketChannel);
-            } while (httpEventEntity.isNotEnd());
-            socketChannel.register(selector, SelectionKey.OP_READ);
-            log.trace("{} cost {} MICROS", socketChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
+            //响应初始化，寻找本地资源 已组装完成的消息会跳过
+            initResponse(request, resp);
+
+            //压缩
+            if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(resp.get().gainHeaderContentType()))
+                compress(request, resp);
+
+            doResponse(resp, netChannel);
+//            } while (httpEventEntity.isNotEnd());
+            netChannel.register(selector, SelectionKey.OP_READ);
+//            log.info("{} cost {} MICROS", netChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         } catch (NullPointerException e) {
-            socketChannel.close();
+//            netChannel.close();
         } catch (Exception e) {
             log.error("", e);
-            socketChannel.close();
+            netChannel.close();
         }
         return null;
     }
@@ -249,7 +253,7 @@ class DoResponse implements Callable<Object> {
     }
 
     @SuppressWarnings("all")
-    private void doResponse(AtomicReference<Response> resp, SocketChannel socketChannel) throws Exception {
+    private void doResponse(AtomicReference<Response> resp, NetChannel netChannel) throws Exception {
 
 
         Response response = resp.get();
@@ -264,10 +268,10 @@ class DoResponse implements Callable<Object> {
 
         //Header
         try {
-            IoUtil.writeBytes(socketChannel, bytes, 2000);
+            IoUtil.writeBytes(netChannel, bytes, 2000, handlerV2, handlerV2W);
         } catch (Exception e) {
             log.error("", e);
-            socketChannel.close();
+            netChannel.close();
         }
         //body
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
@@ -278,21 +282,36 @@ class DoResponse implements Callable<Object> {
                 FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
                 long l = 0;
                 long size = fileChannel.size();
-                do {
-                    l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, socketChannel);
-                } while (l != size);
+                if (netChannel.isNioChannel())
+                    do {
+                        l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, netChannel.getNChannel());
+                    } while (l != size);
+                else {
+                    ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
+                    do {
+                        l += IoUtil.leftToRight(fileChannel, netChannel.getAChannel(), byteBuffer);
+                    } while (l != size);
+                }
                 fileChannel.close();
             } else {
                 try {
-                    IoUtil.writeBytes(socketChannel, response.gainBodyBytes(), 2000);
+                    IoUtil.writeBytes(netChannel, response.gainBodyBytes(), 120000, handlerV2, handlerV2W);
                 } catch (Exception e) {
                     log.error("", e);
-                    socketChannel.close();
+                    netChannel.close();
                 }
             }
         }
 
-        log.trace("Response: {}", response.toJsonString());
+        log.info("Response: {}", response.toJsonString());
+    }
+
+    private HttpEventHandlerV2 handlerV2;
+    private HttpEventHandlerV2.HttpEventHandlerV2W handlerV2W;
+
+    void setV2(HttpEventHandlerV2 handlerV2, HttpEventHandlerV2.HttpEventHandlerV2W handlerV2W) {
+        this.handlerV2 = handlerV2;
+        this.handlerV2W = handlerV2W;
     }
 
 }

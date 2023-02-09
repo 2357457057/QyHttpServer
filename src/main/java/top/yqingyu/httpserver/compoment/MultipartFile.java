@@ -14,15 +14,14 @@ import java.nio.channels.FileChannel;
  * @createTime 2022年10月27日 18:23:00
  */
 public class MultipartFile {
-    private String fileName;
-
-    private String originFileName = UUID.randomUUID().toString();
+    private final String fileName;
 
     private final File file;
 
     private FileChannel fileChannel;
     private FileInputStream fileInputStream;
     private FileOutputStream fileOutputStream;
+    private boolean isTransmitted;
 
     public MultipartFile(String fileName, String path) throws IOException {
         this.fileName = fileName;
@@ -30,6 +29,7 @@ public class MultipartFile {
 
         String[] split = fileName.split("[.]");
 
+        String originFileName = UUID.randomUUID().toString();
         if (split.length >= 2)
             originFileName = originFileName + split[split.length - 1];
 
@@ -37,6 +37,7 @@ public class MultipartFile {
 
         if (file.createNewFile())
             fileOutputStream = new FileOutputStream(file);
+        isTransmitted = false;
     }
 
     public String getFileName() {
@@ -52,21 +53,26 @@ public class MultipartFile {
     }
 
     /**
-     * 将文件保存至指定位置
+     * 将文件保存至指定位置 一次性。
      *
      * @param filePath 保存的文件路径
      * @author YYJ
      * @description
      */
     public void transferTo(String filePath) throws IOException {
-        try (FileChannel channel = new FileOutputStream(filePath).getChannel(); FileChannel channel0 = getInputChannel()) {
-            long l = 0;
-            long size = channel0.size();
-            do {
-                l += channel0.transferTo(l, 1024 * 2, channel);
-            } while (l != size);
-        }
-
+        if (!isTransmitted)
+            try (FileChannel channel = new FileOutputStream(filePath).getChannel(); FileChannel channel0 = getInputChannel()) {
+                long l = 0;
+                long size = channel0.size();
+                do {
+                    l += channel0.transferTo(l, 1024 * 2, channel);
+                } while (l != size);
+                if (file.delete()) {
+                    isTransmitted = true;
+                }
+            } catch (Exception e) {
+                isTransmitted = true;
+            }
     }
 
     /**

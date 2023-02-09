@@ -22,7 +22,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static top.yqingyu.httpserver.compoment.HttpEventHandler.resourceReloadingTime;
+import static top.yqingyu.httpserver.compoment.ServerConfig.resourceReloadingTime;
+
 
 /**
  * @author YYJ
