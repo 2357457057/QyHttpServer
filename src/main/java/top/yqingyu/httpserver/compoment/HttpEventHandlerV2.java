@@ -32,7 +32,6 @@ public class HttpEventHandlerV2 extends EventHandler<HttpEventHandlerV2> {
     @Override
     public void IO(NetChannel channel, HttpEventHandlerV2 attachment) {
         try {
-            System.out.println(channel.hashCode());
             channel.setOption(StandardSocketOptions.TCP_NODELAY, true);
             HttpEventEntity httpEventEntity = new DoRequest(null, channel).call();
             DoResponse doResponse = new DoResponse(httpEventEntity, null);
@@ -61,20 +60,19 @@ public class HttpEventHandlerV2 extends EventHandler<HttpEventHandlerV2> {
 
         @Override
         public void completed(Integer result, HttpEventHandlerV2 attachment) {
-            logger.info("result {}", result);
             if (result == -1) {
                 serverSokChannel.accept(attachment, httpEventHandlerV2);
                 return;
             }
             int andIncrement = atomicInteger.getAndIncrement();
             if (andIncrement == 1) {
-                serverSokChannel.accept(attachment, httpEventHandlerV2);
                 try {
-                    netChannel.close();
-                } catch (IOException e) {
-                    logger.error("", e);
+                    serverSokChannel.accept(attachment, httpEventHandlerV2);
+                } catch (Exception ignored) {
+
                 }
-            } else logger.info("andIncrement {}", andIncrement);
+                attachment.completed(netChannel.getAChannel(), attachment);
+            }
 
         }
 
