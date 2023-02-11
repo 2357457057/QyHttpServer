@@ -2,8 +2,8 @@ package top.yqingyu.httpserver.server;
 
 import org.apache.commons.lang3.StringUtils;
 import top.yqingyu.httpserver.compoment.HttpEventHandler;
-import top.yqingyu.httpserver.compoment.HttpEventHandlerV2;
-import top.yqingyu.httpserver.compoment.ServerConfig;
+import top.yqingyu.httpserver.compomentv2.HttpEventHandlerV2;
+import top.yqingyu.httpserver.compomentv2.ServerConfig;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -35,15 +35,16 @@ public class HttpServerStarter {
         SERVER2();
     }
 
-    public static void SERVER2() throws IOException {
+    public static void SERVER2() throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         banner();
+        ServerConfig.load();
         top.yqingyu.common.server$aio
                 .CreateServer
                 .create()
                 .setServerName(SERVER_NAME)
                 .setThreadNo(32)
-                .setHandler(new HttpEventHandlerV2())
-                .bind(port)
+                .setHandler(HttpEventHandlerV2.class)
+                .bind(ServerConfig.port)
                 .start();
     }
 

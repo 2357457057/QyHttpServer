@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.compomentv2;
 
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson2.JSON;
@@ -6,15 +6,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.asm.impl.MethodParamGetter;
-import top.yqingyu.common.utils.ResourceUtil;
-import top.yqingyu.httpserver.annotation.QyController;
-import top.yqingyu.httpserver.common.Bean;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.HttpMethod;
-import top.yqingyu.httpserver.exception.HttpException;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ClazzUtil;
+import top.yqingyu.common.utils.ResourceUtil;
 import top.yqingyu.common.utils.StringUtil;
+import top.yqingyu.httpserver.common.Bean;
+import top.yqingyu.httpserver.annotation.QyController;
+import top.yqingyu.httpserver.common.ContentType;
+import top.yqingyu.httpserver.common.HttpMethod;
+import top.yqingyu.httpserver.compoment.MultipartFile;
+import top.yqingyu.httpserver.exception.HttpException;
 
 import java.io.File;
 import java.lang.reflect.*;
@@ -25,7 +26,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static top.yqingyu.httpserver.compoment.ServerConfig.resourceReloadingTime;
+import static top.yqingyu.httpserver.compomentv2.ServerConfig.resourceReloadingTime;
 
 
 /**

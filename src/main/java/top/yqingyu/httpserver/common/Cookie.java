@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.common;
 
 /**
  * @author YYJ

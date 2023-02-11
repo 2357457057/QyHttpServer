@@ -1,9 +1,8 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.common;
 
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.common.utils.UnameUtil;
-import top.yqingyu.common.utils.YamlUtil;
 
 import java.io.Serial;
 import java.io.Serializable;

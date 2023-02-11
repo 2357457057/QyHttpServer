@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.compomentv2;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -10,6 +10,7 @@ import top.yqingyu.common.utils.IoUtil;
 import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Cookie;
 import top.yqingyu.httpserver.common.HttpVersion;
+import top.yqingyu.common.server$aio.Session;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,8 +18,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -38,7 +37,7 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 class DoResponse implements Callable<Object> {
 
-    private final Selector selector;
+    private final Session session;
 
 
     static long DEFAULT_SEND_BUF_LENGTH;
@@ -82,8 +81,8 @@ class DoResponse implements Callable<Object> {
     HttpEventEntity httpEventEntity;
 
 
-    public DoResponse(HttpEventEntity httpEventEntity, Selector selector) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
-        this.selector = selector;
+    public DoResponse(HttpEventEntity httpEventEntity, Session session) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
+        this.session = session;
         this.httpEventEntity = httpEventEntity;
     }
 
@@ -98,8 +97,6 @@ class DoResponse implements Callable<Object> {
         NetChannel netChannel = null;
         LocalDateTime now = LocalDateTime.now();
         try {
-            netChannel = httpEventEntity.getnetChannel();
-
             Request request = httpEventEntity.getRequest();
             Response response = httpEventEntity.getResponse();
 
@@ -127,10 +124,7 @@ class DoResponse implements Callable<Object> {
             if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(resp.get().gainHeaderContentType()))
                 compress(request, resp);
 
-            doResponse(resp, netChannel.getNChannel());
-//            } while (httpEventEntity.isNotEnd());
-            netChannel.register(selector, SelectionKey.OP_READ);
-//            log.info("{} cost {} MICROS", netChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
+            doResponse(resp, netChannel);
         } catch (NullPointerException e) {
 //            netChannel.close();
         } catch (Exception e) {
@@ -158,13 +152,13 @@ class DoResponse implements Callable<Object> {
         //接口
         if (!response.isAssemble()) {
             //session相关逻辑
-            Session session;
-            String sessionID = request.getCookie(Session.name);
-            if (Session.SESSION_CONTAINER.containsKey(sessionID))
-                session = Session.SESSION_CONTAINER.get(sessionID);
+            top.yqingyu.httpserver.compomentv2.Session session;
+            String sessionID = request.getCookie(top.yqingyu.httpserver.compomentv2.Session.name);
+            if (top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.containsKey(sessionID))
+                session = top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.get(sessionID);
             else {
-                session = new Session();
-                Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
+                session = new top.yqingyu.httpserver.compomentv2.Session();
+                top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
             request.setSession(session);
 
@@ -174,7 +168,7 @@ class DoResponse implements Callable<Object> {
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {
                 session.setNewInstance(false);
-                Cookie cookie = new Cookie(Session.name, session.getSessionVersionID());
+                Cookie cookie = new Cookie(top.yqingyu.httpserver.compomentv2.Session.name, session.getSessionVersionID());
                 cookie.setMaxAge((int) SESSION_TIME_OUT);
                 response.addCookie(cookie);
             }
@@ -247,7 +241,7 @@ class DoResponse implements Callable<Object> {
     }
 
     @SuppressWarnings("all")
-    private void doResponse(AtomicReference<Response> resp, SocketChannel socketChannel) throws Exception {
+    private void doResponse(AtomicReference<Response> resp, NetChannel netChannel) throws Exception {
 
 
         Response response = resp.get();
@@ -262,10 +256,10 @@ class DoResponse implements Callable<Object> {
 
         //Header
         try {
-            IoUtil.writeBytes(socketChannel, bytes, 2000);
+            session.writeBytes(bytes, 2000);
         } catch (Exception e) {
             log.error("", e);
-            socketChannel.close();
+            netChannel.close();
         }
         //body
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
@@ -276,22 +270,28 @@ class DoResponse implements Callable<Object> {
                 FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
                 long l = 0;
                 long size = fileChannel.size();
-                do {
-                    l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, socketChannel);
-                } while (l != size);
+                if (netChannel.isNioChannel())
+                    do {
+                        l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, netChannel.getNChannel());
+                    } while (l != size);
+                else {
+                    ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
+                    do {
+                        l += IoUtil.leftToRight(fileChannel, netChannel.getAChannel(), byteBuffer);
+                    } while (l != size);
+                }
                 fileChannel.close();
             } else {
                 try {
-                    IoUtil.writeBytes(socketChannel, response.gainBodyBytes(), 2000);
+                    session.writeBytes(response.gainBodyBytes(), 2000);
                 } catch (Exception e) {
                     log.error("", e);
-                    socketChannel.close();
+                    netChannel.close();
                 }
             }
         }
 
-        log.trace("Response: {}", response.toJsonString());
+        log.info("Response: {}", response.toJsonString());
     }
-
 
 }

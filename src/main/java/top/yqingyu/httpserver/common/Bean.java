@@ -1,4 +1,6 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.common;
+
+import top.yqingyu.httpserver.common.HttpMethod;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
@@ -54,11 +56,11 @@ public class Bean {
         this.methodParamName = methodParamName;
     }
 
-    public top.yqingyu.httpserver.compoment.HttpMethod[] getHttpMethods() {
+    public HttpMethod[] getHttpMethods() {
         return httpMethods;
     }
 
-    public void setHttpMethods(top.yqingyu.httpserver.compoment.HttpMethod[] httpMethods) {
+    public void setHttpMethods(HttpMethod[] httpMethods) {
         this.httpMethods = httpMethods;
     }
 

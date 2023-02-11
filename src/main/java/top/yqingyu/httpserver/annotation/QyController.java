@@ -1,6 +1,6 @@
 package top.yqingyu.httpserver.annotation;
 
-import top.yqingyu.httpserver.compoment.HttpMethod;
+import top.yqingyu.httpserver.common.HttpMethod;
 
 import java.lang.annotation.*;
 

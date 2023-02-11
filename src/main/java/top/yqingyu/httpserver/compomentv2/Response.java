@@ -1,11 +1,10 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.compomentv2;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
 import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ArrayUtil;
-import top.yqingyu.common.utils.LocalDateTimeUtil;
 import top.yqingyu.httpserver.Version;
 import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Cookie;
@@ -27,7 +26,7 @@ import static top.yqingyu.common.utils.LocalDateTimeUtil.HTTP_FORMATTER;
  * @description
  * @createTime 2022年09月13日 22:10:00
  */
-public class Response implements HttpAction {
+public class Response  implements HttpAction {
 
     public static final Response $404_NOT_FOUND = new Response().setStatue_code("404").setHttpVersion(HttpVersion.V_1_1).setString_body("木有资源啦 ^ Ω ^").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
     public static final Response $413_ENTITY_LARGE = new Response().setStatue_code("413").setHttpVersion(HttpVersion.V_1_1).setString_body("413 Request Entity Too Large").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
