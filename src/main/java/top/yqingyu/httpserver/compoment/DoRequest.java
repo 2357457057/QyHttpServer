@@ -21,7 +21,6 @@ import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.concurrent.Callable;
@@ -87,7 +86,6 @@ class DoRequest implements Callable<HttpEventEntity> {
             e.printStackTrace();
         } finally {
             if (httpAction != null) log.info("Request: {}", JSON.toJSONString(httpAction));
-//            log.info("{}出 cost {} MICROS", netChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         }
         return null;
     }
