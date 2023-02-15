@@ -25,6 +25,7 @@ import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -277,7 +278,10 @@ class DoResponse implements Callable<Object> {
                 else {
                     ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
                     do {
-                        l += IoUtil.leftToRight(fileChannel, netChannel.getAChannel(), byteBuffer);
+                        byteBuffer.clear();
+                        byteBuffer.flip();
+                        fileChannel.read(byteBuffer, l);
+                        l += session.write(byteBuffer, 1000, TimeUnit.MILLISECONDS);
                     } while (l != size);
                 }
                 fileChannel.close();
