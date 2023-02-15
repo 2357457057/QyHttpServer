@@ -276,7 +276,7 @@ class DoResponse implements Callable<Object> {
                     byteBuffer.clear();
                     byteBuffer.flip();
                     fileChannel.read(byteBuffer, l);
-                    l += session.write(byteBuffer, 1000, TimeUnit.MILLISECONDS);
+                    l += session.write(byteBuffer, 60, TimeUnit.SECONDS);
                 } while (l != size);
                 fileChannel.close();
             } else {
