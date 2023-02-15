@@ -271,19 +271,13 @@ class DoResponse implements Callable<Object> {
                 FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
                 long l = 0;
                 long size = fileChannel.size();
-                if (netChannel.isNioChannel())
-                    do {
-                        l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, netChannel.getNChannel());
-                    } while (l != size);
-                else {
-                    ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
-                    do {
-                        byteBuffer.clear();
-                        byteBuffer.flip();
-                        fileChannel.read(byteBuffer, l);
-                        l += session.write(byteBuffer, 1000, TimeUnit.MILLISECONDS);
-                    } while (l != size);
-                }
+                ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
+                do {
+                    byteBuffer.clear();
+                    byteBuffer.flip();
+                    fileChannel.read(byteBuffer, l);
+                    l += session.write(byteBuffer, 1000, TimeUnit.MILLISECONDS);
+                } while (l != size);
                 fileChannel.close();
             } else {
                 try {
