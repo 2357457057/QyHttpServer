@@ -130,7 +130,6 @@ class DoResponse implements Callable<Object> {
 //            netChannel.close();
         } catch (Exception e) {
             log.error("", e);
-            netChannel.close();
         }
         return null;
     }
@@ -269,15 +268,8 @@ class DoResponse implements Callable<Object> {
             File file_body = response.getFile_body();
             if (file_body != null && !response.isCompress()) {
                 FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
-                long l = 0;
-                long size = fileChannel.size();
                 ByteBuffer byteBuffer = ByteBuffer.allocateDirect((int) DEFAULT_SEND_BUF_LENGTH);
-                do {
-                    byteBuffer.clear();
-                    byteBuffer.flip();
-                    fileChannel.read(byteBuffer, l);
-                    l += session.write(byteBuffer, 60, TimeUnit.SECONDS);
-                } while (l != size);
+                session.writeFile(fileChannel, byteBuffer);
                 fileChannel.close();
             } else {
                 try {
