@@ -35,7 +35,7 @@ public class ServerConfig {
                 handlerNumber = server.getIntValue("handler-num", 4);
                 perHandlerWorker = server.getIntValue("per-worker-num", 4);
                 Long workerKeepLiveTime = server.$2MILLS("worker-keep-live-time", UnitUtil.$2MILLS("2H"));
-                resourceReloadingTime = server.$2MILLS("resource-reloading-time", UnitUtil.$2MILLS("30S"));
+                resourceReloadingTime = server.$2MILLS("resource-reloading-time", UnitUtil.$2MILLS("60S"));
                 connectTimeMax = server.$2MILLS("connect-time-max", UnitUtil.$2MILLS("15S"));
                 boolean open_resource = server.getBooleanValue("open-resource", true);
                 boolean open_controller = server.getBooleanValue("open-controller", true);

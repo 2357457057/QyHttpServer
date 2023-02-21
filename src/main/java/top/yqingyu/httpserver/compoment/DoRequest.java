@@ -1,6 +1,5 @@
 package top.yqingyu.httpserver.compoment;
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -17,9 +16,7 @@ import top.yqingyu.httpserver.common.HttpMethod;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -86,7 +83,8 @@ class DoRequest implements Runnable {
             }
             log.error("", e);
         } finally {
-            if (httpAction != null) log.info("Request: {}", JSON.toJSONString(httpAction));
+            if (httpAction != null) log.debug("Request: {}", JSON.toJSONString(httpAction));
+            else log.debug("Request: {}", "null");
         }
     }
 
