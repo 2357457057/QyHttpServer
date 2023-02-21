@@ -11,6 +11,7 @@ import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.server$nio.core.OperatingRecorder;
 import top.yqingyu.common.qydata.DataList;
 import top.yqingyu.common.qydata.DataMap;
+import top.yqingyu.common.utils.Status;
 import top.yqingyu.common.utils.UnitUtil;
 import top.yqingyu.common.utils.YamlUtil;
 
@@ -69,13 +70,13 @@ public class HttpEventHandler extends EventHandler {
         ConcurrentQyMap<String, Object> status = NET_CHANNELS.get(socketChannel.hashCode());
         try {
             status.put("LocalDateTime", LocalDateTime.now());
-            status.put("isResponseEnd", Boolean.FALSE);
+            Status.statusFalse(status,HttpStatus.isEnd);
             DoRequest doRequest = new DoRequest(socketChannel, QUEUE);
             READ_POOL.execute(doRequest);
             DoResponse doResponse = new DoResponse(selector, QUEUE, status);
             WRITE_POOL.execute(doResponse);
         } catch (Exception e) {
-            status.put("isResponseEnd", Boolean.TRUE);
+            Status.statusTrue(status,HttpStatus.isEnd);
             throw e;
         }
     }
@@ -105,7 +106,7 @@ public class HttpEventHandler extends EventHandler {
                     try {
                         socketChannel = s.get("NetChannel", NetChannel.class);
                         b = s.get("LocalDateTime", LocalDateTime.class);
-                        end = s.get("isResponseEnd", Boolean.class);
+                        end = s.get(HttpStatus.isEnd, Boolean.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
                         if (between > ServerConfig.connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             NET_CHANNELS.remove(i);

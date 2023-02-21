@@ -7,8 +7,10 @@ import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.common.qydata.ConcurrentQyMap;
+import top.yqingyu.common.server$nio.core.ChannelStatus;
 import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.common.utils.IoUtil;
+import top.yqingyu.common.utils.Status;
 import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Cookie;
 import top.yqingyu.httpserver.common.HttpVersion;
@@ -111,8 +113,8 @@ class DoResponse implements Runnable {
                 Response response = httpEventEntity.getResponse();
 
                 if (request == null && response == null) {
-                    status.put("isResponseEnd", Boolean.TRUE);
-                    status.put("reading", Boolean.FALSE);
+                    Status.statusTrue(status, HttpStatus.isEnd);
+                    Status.statusFalse(status, ChannelStatus.READ);
                     return;
                 }
 
@@ -139,15 +141,15 @@ class DoResponse implements Runnable {
                 doResponse(resp, netChannel.getNChannel());
                 httpEventEntity.setResponse(resp.get());
             } while (httpEventEntity.isNotEnd());
-            status.put("reading", Boolean.FALSE);
-            status.put("isResponseEnd", Boolean.TRUE);
+            Status.statusFalse(status, ChannelStatus.READ);
+            Status.statusTrue(status, HttpStatus.isEnd);
             netChannel.register(selector, SelectionKey.OP_READ);
         } catch (NullPointerException e) {
-            status.put("isResponseEnd", Boolean.TRUE);
-            status.put("reading", Boolean.FALSE);
+            Status.statusTrue(status, HttpStatus.isEnd);
+            Status.statusFalse(status, ChannelStatus.READ);
         } catch (Exception e) {
-            status.put("reading", Boolean.FALSE);
-            status.put("isResponseEnd", Boolean.TRUE);
+            Status.statusFalse(status, ChannelStatus.READ);
+            Status.statusTrue(status, HttpStatus.isEnd);
             log.error("", e);
             try {
                 netChannel.close();
