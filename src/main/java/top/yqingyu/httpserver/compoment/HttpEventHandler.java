@@ -5,11 +5,13 @@ import cn.hutool.core.date.LocalDateTimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
+import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.server$nio.core.EventHandler;
 import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.server$nio.core.OperatingRecorder;
 import top.yqingyu.common.qydata.DataList;
 import top.yqingyu.common.qydata.DataMap;
+import top.yqingyu.common.utils.Status;
 import top.yqingyu.common.utils.UnitUtil;
 import top.yqingyu.common.utils.YamlUtil;
 
@@ -38,7 +40,7 @@ public class HttpEventHandler extends EventHandler {
 
     private static final OperatingRecorder<Integer> SOCKET_CHANNEL_RECORD = OperatingRecorder.createNormalRecorder(1024L * 1024 * 2);
     static final OperatingRecorder<Integer> SOCKET_CHANNEL_ACK = OperatingRecorder.createAckRecorder(10L);
-    private static final AtomicInteger Monitor  = new AtomicInteger(1);
+    private static final AtomicInteger Monitor = new AtomicInteger(1);
     private static final Logger log = LoggerFactory.getLogger(HttpEventHandler.class);
 
     public HttpEventHandler(Selector selector) throws IOException {
@@ -65,17 +67,16 @@ public class HttpEventHandler extends EventHandler {
     @Override
     public void read(Selector selector, NetChannel socketChannel) throws Exception {
         socketChannel.register(selector, SelectionKey.OP_WRITE);
-        int i = socketChannel.hashCode();
+        ConcurrentQyMap<String, Object> status = NET_CHANNELS.get(socketChannel.hashCode());
         try {
-            NET_CHANNELS.get(i).put("LocalDateTime", LocalDateTime.now());
-            NET_CHANNELS.get(i).put("isResponseEnd", Boolean.FALSE);
-            DoRequest doRequest = new DoRequest(selector,socketChannel);
-            HttpEventEntity httpEventEntity = doRequest.call();
-            DoResponse doResponse = new DoResponse(httpEventEntity, selector);
-            doResponse.call();
-            NET_CHANNELS.get(i).put("isResponseEnd", Boolean.TRUE);
+            status.put("LocalDateTime", LocalDateTime.now());
+            Status.statusFalse(status,HttpStatus.isEnd);
+            DoRequest doRequest = new DoRequest(socketChannel, QUEUE);
+            READ_POOL.execute(doRequest);
+            DoResponse doResponse = new DoResponse(selector, QUEUE, status);
+            WRITE_POOL.execute(doResponse);
         } catch (Exception e) {
-            NET_CHANNELS.get(i).put("isResponseEnd", Boolean.TRUE);
+            Status.statusTrue(status,HttpStatus.isEnd);
             throw e;
         }
     }
@@ -83,12 +84,6 @@ public class HttpEventHandler extends EventHandler {
 
     @Override
     public void write(Selector selector, NetChannel socketChannel) throws Exception {
-        try {
-            SOCKET_CHANNEL_RECORD.add2(socketChannel.hashCode());
-        } catch (RebuildSelectorException e) {
-            SOCKET_CHANNEL_RECORD.remove(socketChannel.hashCode());
-            socketChannel.close();
-        }
     }
 
 
@@ -111,7 +106,7 @@ public class HttpEventHandler extends EventHandler {
                     try {
                         socketChannel = s.get("NetChannel", NetChannel.class);
                         b = s.get("LocalDateTime", LocalDateTime.class);
-                        end = s.get("isResponseEnd", Boolean.class);
+                        end = s.get(HttpStatus.isEnd, Boolean.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
                         if (between > ServerConfig.connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             NET_CHANNELS.remove(i);

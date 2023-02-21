@@ -1,12 +1,16 @@
 package top.yqingyu.httpserver.compoment;
 
+import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
+import top.yqingyu.common.qydata.ConcurrentQyMap;
+import top.yqingyu.common.server$nio.core.ChannelStatus;
 import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.common.utils.IoUtil;
+import top.yqingyu.common.utils.Status;
 import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Cookie;
 import top.yqingyu.httpserver.common.HttpVersion;
@@ -25,7 +29,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -36,9 +40,11 @@ import java.util.concurrent.atomic.AtomicReference;
  * @description
  * @createTime 2022年09月19日 15:19:00
  */
-class DoResponse implements Callable<Object> {
+class DoResponse implements Runnable {
 
     private final Selector selector;
+    private final BlockingQueue<Object> QUEUE;
+    ConcurrentQyMap<String, Object> status;
 
 
     static long DEFAULT_SEND_BUF_LENGTH;
@@ -79,12 +85,12 @@ class DoResponse implements Callable<Object> {
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
 
     private static final Logger log = LoggerFactory.getLogger(DoResponse.class);
-    HttpEventEntity httpEventEntity;
 
 
-    public DoResponse(HttpEventEntity httpEventEntity, Selector selector) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
+    public DoResponse(Selector selector, BlockingQueue<Object> queue, ConcurrentQyMap<String, Object> status) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
         this.selector = selector;
-        this.httpEventEntity = httpEventEntity;
+        this.QUEUE = queue;
+        this.status = status;
     }
 
     /**
@@ -93,51 +99,66 @@ class DoResponse implements Callable<Object> {
      */
     @Override
     @SuppressWarnings("all")
-    public Object call() throws Exception {
+    public void run() {
 
         NetChannel netChannel = null;
+        HttpEventEntity httpEventEntity = null;
         LocalDateTime now = LocalDateTime.now();
         try {
-            netChannel = httpEventEntity.getnetChannel();
+            do {
+                httpEventEntity = (HttpEventEntity) QUEUE.take();
+                netChannel = httpEventEntity.getnetChannel();
 
-            Request request = httpEventEntity.getRequest();
-            Response response = httpEventEntity.getResponse();
+                Request request = httpEventEntity.getRequest();
+                Response response = httpEventEntity.getResponse();
 
-            if (request == null && response == null) {
-                return null;
-            }
+                if (request == null && response == null) {
+                    Status.statusTrue(status, HttpStatus.isEnd);
+                    Status.statusFalse(status, ChannelStatus.READ);
+                    return;
+                }
 
-            if (response == null)
-                response = new Response();
-            if (request == null) {
-                request = new Request();
-            }
-
-
-            AtomicReference<Response> resp = new AtomicReference<>();
-            resp.set(response);
-            response.setHttpVersion(HttpVersion.V_1_1);
-            response.putHeaderDate(ZonedDateTime.now());
+                if (response == null)
+                    response = new Response();
+                if (request == null) {
+                    request = new Request();
+                }
 
 
-            //响应初始化，寻找本地资源 已组装完成的消息会跳过
-            initResponse(request, resp);
+                AtomicReference<Response> resp = new AtomicReference<>();
+                resp.set(response);
+                response.setHttpVersion(HttpVersion.V_1_1);
+                response.putHeaderDate(ZonedDateTime.now());
 
-            //压缩
-            if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(resp.get().gainHeaderContentType()))
-                compress(request, resp);
 
-            doResponse(resp, netChannel.getNChannel());
-//            } while (httpEventEntity.isNotEnd());
+                //响应初始化，寻找本地资源 已组装完成的消息会跳过
+                initResponse(request, resp);
+
+                //压缩
+                if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(resp.get().gainHeaderContentType()))
+                    compress(request, resp);
+
+                doResponse(resp, netChannel.getNChannel());
+                httpEventEntity.setResponse(resp.get());
+            } while (httpEventEntity.isNotEnd());
+            Status.statusFalse(status, ChannelStatus.READ);
+            Status.statusTrue(status, HttpStatus.isEnd);
             netChannel.register(selector, SelectionKey.OP_READ);
-//            log.info("{} cost {} MICROS", netChannel.hashCode(), LocalDateTimeUtil.between(now, LocalDateTime.now(), ChronoUnit.MICROS));
         } catch (NullPointerException e) {
-//            netChannel.close();
+            Status.statusTrue(status, HttpStatus.isEnd);
+            Status.statusFalse(status, ChannelStatus.READ);
         } catch (Exception e) {
+            Status.statusFalse(status, ChannelStatus.READ);
+            Status.statusTrue(status, HttpStatus.isEnd);
             log.error("", e);
-            netChannel.close();
+            try {
+                netChannel.close();
+            } catch (IOException ex) {
+                log.error("", ex);
+            }
+        } finally {
+            log.debug("Response {}", JSON.toJSONString(httpEventEntity.getResponse()));
         }
-        return null;
     }
 
 
