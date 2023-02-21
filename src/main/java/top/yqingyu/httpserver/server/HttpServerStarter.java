@@ -32,7 +32,7 @@ public class HttpServerStarter {
     }
 
     public static void main(String[] args) throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        SERVER2();
+        SERVER1();
     }
 
     public static void SERVER2() throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {

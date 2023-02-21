@@ -23,10 +23,7 @@ import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static top.yqingyu.httpserver.compoment.Response.*;
@@ -40,11 +37,11 @@ import static top.yqingyu.common.utils.ArrayUtil.*;
  * @createTime 2022年09月14日 18:34:00
  */
 
-class DoRequest implements Callable<HttpEventEntity> {
+class DoRequest implements Runnable {
 
 
     private final NetChannel netChannel;
-    private final Selector selector;
+    private final BlockingQueue<Object> blockingQueue;
     static long DEFAULT_BUF_LENGTH;
     //最大Body长度 64M
     static long MAX_BODY_SIZE;
@@ -56,14 +53,13 @@ class DoRequest implements Callable<HttpEventEntity> {
 
     private static final Logger log = LoggerFactory.getLogger(DoRequest.class);
 
-    DoRequest(Selector selector, NetChannel netChannel) {
+    DoRequest(NetChannel netChannel, BlockingQueue<Object> blockingQueue) {
+        this.blockingQueue = blockingQueue;
         this.netChannel = netChannel;
-        this.selector = selector;
     }
 
     @Override
-    public HttpEventEntity call() throws Exception {
-        LocalDateTime now = LocalDateTime.now();
+    public void run() {
         HttpAction httpAction = null;
         try {
             httpAction = parseRequest();
@@ -79,23 +75,27 @@ class DoRequest implements Callable<HttpEventEntity> {
             }
 
             //进行response
-            return createResponse(request, response, false);
+            createResponse(request, response, false);
         } catch (RebuildSelectorException e) {
             throw e;
         } catch (Exception e) {
-            e.printStackTrace();
+            try {
+                createResponse(null, null, false);
+            } catch (Exception ex) {
+                log.error("", e);
+            }
+            log.error("", e);
         } finally {
             if (httpAction != null) log.info("Request: {}", JSON.toJSONString(httpAction));
         }
-        return null;
     }
 
 
-    private HttpEventEntity createResponse(Request request, Response response, boolean notEnd) throws Exception {
+    private void createResponse(Request request, Response response, boolean notEnd) throws Exception {
         HttpEventEntity httpEventEntity = new HttpEventEntity(netChannel, notEnd);
         httpEventEntity.setRequest(request);
         httpEventEntity.setResponse(response);
-        return httpEventEntity;
+        blockingQueue.put(httpEventEntity);
     }
 
     private HttpAction parseRequest() throws Exception {
@@ -157,6 +157,10 @@ class DoRequest implements Callable<HttpEventEntity> {
                         flag = true;
                         assembleHeader(request, bytes.get(0), netChannel);
                         // 当只收到消息头，且消息头有 Content-Length 且Content-Length在一定的范围内 此时需要
+                        if (bytes.size() == 1 && StringUtils.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
+                            Response response = $100_CONTINUE.putHeaderDate(ZonedDateTime.now());
+                            createResponse(request, response, true);
+                        }
                     }
                 }
 
