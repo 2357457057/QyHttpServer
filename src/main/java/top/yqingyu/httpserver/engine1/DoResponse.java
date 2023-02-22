@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compomentv2;
+package top.yqingyu.httpserver.engine1;
 
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -6,10 +6,7 @@ import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.common.utils.GzipUtil;
-import top.yqingyu.common.utils.IoUtil;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.Cookie;
-import top.yqingyu.httpserver.common.HttpVersion;
+import top.yqingyu.httpserver.common.*;
 import top.yqingyu.common.server$aio.Session;
 
 import java.io.File;
@@ -17,17 +14,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.channels.SelectionKey;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
  * @author YYJ
@@ -39,40 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 class DoResponse implements Callable<Object> {
 
     private final Session session;
-
-
-    static long DEFAULT_SEND_BUF_LENGTH;
-
-    static boolean FILE_COMPRESS_ON;
-
-    static ArrayList<ContentType> UN_DO_COMPRESS_FILE = new ArrayList<>(Arrays.asList(
-            ContentType.APPLICATION_OCTET_STREAM,
-            ContentType.IMAGE_JPEG,
-            ContentType.IMAGE_PNG,
-            ContentType.IMAGE_GIF,
-            ContentType.IMAGE_WEBP,
-            ContentType.IMAGE_BMP,
-            ContentType.IMAGE_SVG,
-            ContentType.IMAGE_X_ICON,
-            ContentType.IMAGE_TIFF,
-            ContentType.VIDEO_AVI,
-            ContentType.VIDEO_MP4,
-            ContentType.VIDEO_MPEG4,
-            ContentType.VIDEO_WMV,
-            ContentType.VIDEO_WEBM,
-            ContentType.AUDIO_MP3
-    ));
-
-    //最大压缩源文件大小 128MB
-    static long MAX_SINGLE_FILE_COMPRESS_SIZE;
-
-    //是否开启缓存池
-    static boolean CACHE_POOL_ON;
-
-    //最大缓存池大小 1.5GB
-    static long MAX_FILE_CACHE_SIZE;
-
-    static long SESSION_TIME_OUT;
 
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 
@@ -152,13 +112,13 @@ class DoResponse implements Callable<Object> {
         //接口
         if (!response.isAssemble()) {
             //session相关逻辑
-            top.yqingyu.httpserver.compomentv2.Session session;
-            String sessionID = request.getCookie(top.yqingyu.httpserver.compomentv2.Session.name);
-            if (top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.containsKey(sessionID))
-                session = top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.get(sessionID);
+            top.yqingyu.httpserver.common.Session session;
+            String sessionID = request.getCookie(top.yqingyu.httpserver.common.Session.name);
+            if (top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.containsKey(sessionID))
+                session = top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.get(sessionID);
             else {
-                session = new top.yqingyu.httpserver.compomentv2.Session();
-                top.yqingyu.httpserver.compomentv2.Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
+                session = new top.yqingyu.httpserver.common.Session();
+                top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
             request.setSession(session);
 
@@ -168,7 +128,7 @@ class DoResponse implements Callable<Object> {
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {
                 session.setNewInstance(false);
-                Cookie cookie = new Cookie(top.yqingyu.httpserver.compomentv2.Session.name, session.getSessionVersionID());
+                Cookie cookie = new Cookie(top.yqingyu.httpserver.common.Session.name, session.getSessionVersionID());
                 cookie.setMaxAge((int) SESSION_TIME_OUT);
                 response.addCookie(cookie);
             }

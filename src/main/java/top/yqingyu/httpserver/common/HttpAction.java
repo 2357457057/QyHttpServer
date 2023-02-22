@@ -1,7 +1,5 @@
 package top.yqingyu.httpserver.common;
 
-import top.yqingyu.httpserver.compoment.Request;
-import top.yqingyu.httpserver.compoment.Response;
 
 /**
  * @author YYJ

@@ -21,7 +21,7 @@
 
 
         <package.type>release</package.type>
-<!--                <package.type>ossrh</package.type>-->
+        <!--                <package.type>ossrh</package.type>-->
 
     </properties>
     <dependencies>
@@ -29,14 +29,18 @@
             <groupId>top.yqingyu</groupId>
             <artifactId>commons-qy</artifactId>
         </dependency>
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
-
 
 
     <name>QyHttpServer</name>
     <artifactId>QyHttpServer</artifactId>
     <version>${project.parent.version}</version>
-    <description>simple HTTP server , easy WEB MVC </description>
+    <description>simple HTTP server , easy WEB MVC</description>
     <url>https://github.com/2357457057/QyHttpServer</url>
     <licenses>
         <license>
@@ -137,21 +141,21 @@
                 </executions>
             </plugin>
 
-            <!--gpg插件-->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-gpg-plugin</artifactId>
-                <version>1.5</version>
-                <executions>
-                    <execution>
-                        <id>sign-artifacts</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>sign</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+            <!--            &lt;!&ndash;gpg插件&ndash;&gt;-->
+            <!--            <plugin>-->
+            <!--                <groupId>org.apache.maven.plugins</groupId>-->
+            <!--                <artifactId>maven-gpg-plugin</artifactId>-->
+            <!--                <version>1.5</version>-->
+            <!--                <executions>-->
+            <!--                    <execution>-->
+            <!--                        <id>sign-artifacts</id>-->
+            <!--                        <phase>verify</phase>-->
+            <!--                        <goals>-->
+            <!--                            <goal>sign</goal>-->
+            <!--                        </goals>-->
+            <!--                    </execution>-->
+            <!--                </executions>-->
+            <!--            </plugin>-->
 
         </plugins>
     </build>

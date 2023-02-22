@@ -1,14 +1,15 @@
 package top.yqingyu.httpserver.server;
 
 import org.apache.commons.lang3.StringUtils;
-import top.yqingyu.httpserver.compoment.HttpEventHandler;
-import top.yqingyu.httpserver.compomentv2.HttpEventHandlerV2;
-import top.yqingyu.httpserver.compomentv2.ServerConfig;
+import top.yqingyu.httpserver.engine0.HttpEventHandler;
+import top.yqingyu.httpserver.engine1.HttpEventHandlerV2;
+import top.yqingyu.httpserver.common.ServerConfig;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 
-import static top.yqingyu.httpserver.compoment.ServerConfig.*;
+import static top.yqingyu.httpserver.common.ServerConfig.*;
+
 
 /**
  * @author YYJ
@@ -32,29 +33,31 @@ public class HttpServerStarter {
     }
 
     public static void main(String[] args) throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        SERVER1();
-    }
-
-    public static void SERVER2() throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         banner();
         ServerConfig.load();
+        if (ENGINE == 0) {
+            ENGINE0();
+        } else if (ENGINE == 1) {
+            ENGINE1();
+        }
+    }
+
+    public static void ENGINE1() throws IOException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         top.yqingyu.common.server$aio
                 .CreateServer
                 .create()
                 .setServerName(SERVER_NAME)
                 .setThreadNo(32)
                 .setHandler(HttpEventHandlerV2.class)
-                .bind(ServerConfig.port)
+                .bind(port)
                 .start();
     }
 
-    public static void SERVER1() throws IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
-        banner();
+    public static void ENGINE0() throws IOException, InvocationTargetException, IllegalAccessException, NoSuchMethodException, InstantiationException {
         top.yqingyu.common.server$nio
                 .CreateServer
                 .createDefault(SERVER_NAME)
                 .implEvent(HttpEventHandler.class)
-                .loadingEventResource()
                 .defaultFixRouter(handlerNumber, perHandlerWorker)
                 .listenPort(port)
                 .start();

@@ -1,18 +1,16 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.engine1;
+
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.server$nio.core.RebuildSelectorException;
+import top.yqingyu.common.server$aio.Session;
 import top.yqingyu.common.utils.ArrayUtil;
-import top.yqingyu.common.utils.IoUtil;
 import top.yqingyu.common.utils.StringUtil;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.HttpAction;
-import top.yqingyu.httpserver.common.HttpMethod;
+import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -20,11 +18,14 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static top.yqingyu.httpserver.compoment.Response.*;
 import static top.yqingyu.common.utils.ArrayUtil.*;
+import static top.yqingyu.httpserver.common.Response.*;
+import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
  * @author YYJ
@@ -34,29 +35,17 @@ import static top.yqingyu.common.utils.ArrayUtil.*;
  * @createTime 2022年09月14日 18:34:00
  */
 
-class DoRequest implements Runnable {
+class DoRequest implements Callable<HttpEventEntity> {
 
-
-    private final NetChannel netChannel;
-    private final BlockingQueue<Object> blockingQueue;
-    static long DEFAULT_BUF_LENGTH;
-    //最大Body长度 64M
-    static long MAX_BODY_SIZE;
-
-    //最大header长度 128KB
-    static long MAX_HEADER_SIZE;
-
-    static boolean ALLOW_UPDATE = true;
-
+    private final Session session;
     private static final Logger log = LoggerFactory.getLogger(DoRequest.class);
 
-    DoRequest(NetChannel netChannel, BlockingQueue<Object> blockingQueue) {
-        this.blockingQueue = blockingQueue;
-        this.netChannel = netChannel;
+    DoRequest(Session session) {
+        this.session = session;
     }
 
     @Override
-    public void run() {
+    public HttpEventEntity call() throws Exception {
         HttpAction httpAction = null;
         try {
             httpAction = parseRequest();
@@ -72,28 +61,23 @@ class DoRequest implements Runnable {
             }
 
             //进行response
-            createResponse(request, response, false);
+            return createResponse(request, response, false);
         } catch (RebuildSelectorException e) {
             throw e;
         } catch (Exception e) {
-            try {
-                createResponse(null, null, false);
-            } catch (Exception ex) {
-                log.error("", e);
-            }
             log.error("", e);
         } finally {
-            if (httpAction != null) log.debug("Request: {}", JSON.toJSONString(httpAction));
-            else log.debug("Request: {}", "null");
+            if (httpAction != null) log.info("Request: {}", JSON.toJSONString(httpAction));
         }
+        return null;
     }
 
 
-    private void createResponse(Request request, Response response, boolean notEnd) throws Exception {
-        HttpEventEntity httpEventEntity = new HttpEventEntity(netChannel, notEnd);
+    private HttpEventEntity createResponse(Request request, Response response, boolean notEnd) throws Exception {
+        HttpEventEntity httpEventEntity = new HttpEventEntity(session, notEnd);
         httpEventEntity.setRequest(request);
         httpEventEntity.setResponse(response);
-        blockingQueue.put(httpEventEntity);
+        return httpEventEntity;
     }
 
     private HttpAction parseRequest() throws Exception {
@@ -101,7 +85,7 @@ class DoRequest implements Runnable {
         byte[] all = new byte[0];
         AtomicInteger enumerator = new AtomicInteger();
         Request request = new Request();
-        InetSocketAddress remoteAddress = (InetSocketAddress) netChannel.getRemoteAddress();
+        InetSocketAddress remoteAddress = (InetSocketAddress) session.getChannel().getRemoteAddress();
         request.setInetSocketAddress(remoteAddress);
         request.setHost(remoteAddress.getHostString());
         // 头部是否已解析
@@ -111,11 +95,9 @@ class DoRequest implements Runnable {
         do {
             int currentStep = enumerator.getAndIncrement();
             byte[] temp = new byte[0];
-            try {
-                temp = IoUtil.readBytes2(netChannel, (int) DEFAULT_BUF_LENGTH);
-            } catch (IOException e) {
-                netChannel.close();
-            }
+
+            temp = session.readBytes2((int) DEFAULT_BUF_LENGTH);
+
 
             currentLength = temp.length;
             //当报文总长度不足 DEFAULT_BUF_LENGTH
@@ -123,7 +105,7 @@ class DoRequest implements Runnable {
             if (currentStep == 0 && temp.length < DEFAULT_BUF_LENGTH && currentLength != 0) {
                 ArrayList<byte[]> Info$header$body = ArrayUtil.splitByTarget(temp, RN_RN);
 
-                assembleHeader(request, Info$header$body.remove(0), netChannel);
+                assembleHeader(request, Info$header$body.remove(0), session);
 
                 byte[] body = EMPTY_BYTE_ARRAY;
                 for (byte[] bytes : Info$header$body) {
@@ -153,12 +135,8 @@ class DoRequest implements Runnable {
                     if (bytes.size() != 0) {
                         // 头部已解析
                         flag = true;
-                        assembleHeader(request, bytes.get(0), netChannel);
+                        assembleHeader(request, bytes.get(0), session);
                         // 当只收到消息头，且消息头有 Content-Length 且Content-Length在一定的范围内 此时需要
-                        if (bytes.size() == 1 && StringUtils.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
-                            Response response = $100_CONTINUE.putHeaderDate(ZonedDateTime.now());
-                            createResponse(request, response, true);
-                        }
                     }
                 }
 
@@ -195,16 +173,16 @@ class DoRequest implements Runnable {
                             //文件上传逻辑
                             if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
                                 if (!LocationMapping.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
-                                    netChannel.shutdownInput();
+                                    session.close();
                                     return $401_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
                                 }
-                                fileUpload(request, netChannel, parse, all, efIdx, currentContentLength, contentLength);
+                                fileUpload(request, session, parse, all, efIdx, currentContentLength, contentLength);
 
                             } else {
                                 long ll = contentLength - currentContentLength;
                                 //去除多余的数据
                                 if (contentLength != -1) {
-                                    temp = IoUtil.readBytes2(netChannel, (int) ll);
+                                    temp = session.readBytes2((int) ll);
                                     byte[] body = new byte[(int) contentLength];
                                     System.arraycopy(all, efIdx, body, 0, currentContentLength);
                                     System.arraycopy(temp, 0, body, currentContentLength, (int) ll);
@@ -222,13 +200,13 @@ class DoRequest implements Runnable {
         return request;
     }
 
-    static void assembleHeader(Request request, byte[] header, NetChannel netChannel) throws Exception {
+    static void assembleHeader(Request request, byte[] header, Session session) throws Exception {
         //只剩body
         ArrayList<byte[]> info$header = ArrayUtil.splitByTarget(header, RN);
         ArrayList<byte[]> info = splitByTarget(info$header.remove(0), SPACE);
 
         if (info.size() < 3) {
-            netChannel.close();
+            session.close();
             throw new RebuildSelectorException("消息解析异常");
         }
         request.setMethod(info.get(0));
@@ -261,7 +239,7 @@ class DoRequest implements Runnable {
      * @version 1.0.0
      * @description
      */
-    static void fileUpload(Request request, NetChannel netChannel, ContentType parse, byte[] all, int efIdx, int currentContentLength, long contentLength) throws IOException, ExecutionException, InterruptedException, TimeoutException {
+    static void fileUpload(Request request, Session session, ContentType parse, byte[] all, int efIdx, int currentContentLength, long contentLength) throws IOException, ExecutionException, InterruptedException, TimeoutException {
         String boundary = "--" + parse.getParameter("boundary") + "\r\n";
         byte[] boundaryBytes = boundary.getBytes();
         byte[] temp = ArrayUtils.subarray(all, efIdx, all.length);
@@ -292,12 +270,15 @@ class DoRequest implements Runnable {
                     }
                 }
             }
-            temp = IoUtil.readBytes2(netChannel, (int) DEFAULT_BUF_LENGTH * 2);
+            temp = session.readBytes2((int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }
         request.setMultipartFile(multipartFileStack.pop().endWrite());
         request.setParseEnd();
     }
 
+    static void assembleMultipartFileHeader() {
+
+    }
 
 }

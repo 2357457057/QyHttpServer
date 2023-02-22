@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compomentv2;
+package top.yqingyu.httpserver.common;
 
 import cn.hutool.core.lang.UUID;
 
@@ -86,12 +86,12 @@ public class MultipartFile {
         transferTo(filePath);
 
     }
-
-    void write(byte[] bytes) throws IOException {
+    @Deprecated
+    public void write(byte[] bytes) throws IOException {
         fileOutputStream.write(bytes);
     }
-
-    MultipartFile endWrite() throws IOException {
+    @Deprecated
+   public MultipartFile endWrite() throws IOException {
         fileOutputStream.close();
         return this;
     }

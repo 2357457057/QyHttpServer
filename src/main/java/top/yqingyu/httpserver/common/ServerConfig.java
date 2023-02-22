@@ -1,13 +1,12 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.common;
 
 import top.yqingyu.common.qydata.DataList;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.UnitUtil;
 import top.yqingyu.common.utils.YamlUtil;
 
-import static top.yqingyu.httpserver.compoment.DoRequest.*;
-import static top.yqingyu.httpserver.compoment.DoResponse.*;
-import static top.yqingyu.httpserver.compoment.DoResponse.SESSION_TIME_OUT;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * @author YYJ
@@ -18,12 +17,51 @@ import static top.yqingyu.httpserver.compoment.DoResponse.SESSION_TIME_OUT;
  */
 public class ServerConfig {
 
-    static long resourceReloadingTime;
+    public static long resourceReloadingTime;
+    public static int ENGINE;
     public static int port;
     public static int handlerNumber;
     public static int perHandlerWorker;
     public static long connectTimeMax;
-    static void load() {
+    /*============================Request===================================*/
+    public static long DEFAULT_BUF_LENGTH;
+    //最大Body长度 64M
+    public static long MAX_BODY_SIZE;
+
+    //最大header长度 128KB
+    public static long MAX_HEADER_SIZE;
+    public static boolean ALLOW_UPDATE = true;
+
+    /*============================Response===================================*/
+    //最大压缩源文件大小 128MB
+    public static long MAX_SINGLE_FILE_COMPRESS_SIZE;
+    //是否开启缓存池
+    public static boolean CACHE_POOL_ON;
+    //最大缓存池大小 1.5GB
+    public static long MAX_FILE_CACHE_SIZE;
+    public static long SESSION_TIME_OUT;
+
+    public static long DEFAULT_SEND_BUF_LENGTH;
+
+    public static boolean FILE_COMPRESS_ON;
+    public static ArrayList<ContentType> UN_DO_COMPRESS_FILE = new ArrayList<>(Arrays.asList(
+            ContentType.APPLICATION_OCTET_STREAM,
+            ContentType.IMAGE_JPEG,
+            ContentType.IMAGE_PNG,
+            ContentType.IMAGE_GIF,
+            ContentType.IMAGE_WEBP,
+            ContentType.IMAGE_BMP,
+            ContentType.IMAGE_SVG,
+            ContentType.IMAGE_X_ICON,
+            ContentType.IMAGE_TIFF,
+            ContentType.VIDEO_AVI,
+            ContentType.VIDEO_MP4,
+            ContentType.VIDEO_MPEG4,
+            ContentType.VIDEO_WMV,
+            ContentType.VIDEO_WEBM,
+            ContentType.AUDIO_MP3
+    ));
+    public static void load() {
         DataMap yamlUtil = YamlUtil.loadYaml("server-cfg", YamlUtil.LoadType.BOTH).getCfgData();
         DataMap cfg = yamlUtil.getNotNUllData("server-cfg.yml");
         if (cfg.size() == 0)
@@ -36,6 +74,7 @@ public class ServerConfig {
                 handlerNumber = server.getIntValue("handler-num", 4);
                 perHandlerWorker = server.getIntValue("per-worker-num", 4);
                 Long workerKeepLiveTime = server.$2MILLS("worker-keep-live-time", UnitUtil.$2MILLS("2H"));
+                ENGINE = server.getIntValue("engine",0);
                 resourceReloadingTime = server.$2MILLS("resource-reloading-time", UnitUtil.$2MILLS("60S"));
                 connectTimeMax = server.$2MILLS("connect-time-max", UnitUtil.$2MILLS("15S"));
                 boolean open_resource = server.getBooleanValue("open-resource", true);

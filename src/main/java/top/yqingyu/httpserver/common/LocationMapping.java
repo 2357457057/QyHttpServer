@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.common;
 
 import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson2.JSON;
@@ -6,15 +6,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.asm.impl.MethodParamGetter;
-import top.yqingyu.common.utils.ResourceUtil;
-import top.yqingyu.httpserver.annotation.QyController;
-import top.yqingyu.httpserver.common.Bean;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.HttpMethod;
-import top.yqingyu.httpserver.exception.HttpException;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ClazzUtil;
+import top.yqingyu.common.utils.ResourceUtil;
 import top.yqingyu.common.utils.StringUtil;
+import top.yqingyu.httpserver.annotation.QyController;
+import top.yqingyu.httpserver.exception.HttpException;
 
 import java.io.File;
 import java.lang.reflect.*;
@@ -25,7 +22,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static top.yqingyu.httpserver.compoment.ServerConfig.resourceReloadingTime;
+import static top.yqingyu.httpserver.common.ServerConfig.resourceReloadingTime;
 
 
 /**
@@ -43,8 +40,8 @@ public class LocationMapping {
     public static List<String> RootPathArray = new ArrayList<>();
     static final ConcurrentHashMap<String, String> FILE_CACHING = new ConcurrentHashMap<>();
 
-    static final ConcurrentHashMap<String, Bean> BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
-    static final ConcurrentHashMap<String, Bean> MULTIPART_BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<String, Bean> BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
+    public static final ConcurrentHashMap<String, Bean> MULTIPART_BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
 
     static final String FORM = "{\"body\"}";
 
@@ -147,7 +144,7 @@ public class LocationMapping {
     }
 
 
-    static void fileResourceMapping(Request request, Response response) {
+    public static void fileResourceMapping(Request request, Response response) {
         String url = request.getUrl();
         String[] urls = url.split("[?]");
         url = urls[0];
@@ -194,7 +191,7 @@ public class LocationMapping {
         }
     }
 
-    static void beanResourceMapping(Request request, Response response) {
+    public static void beanResourceMapping(Request request, Response response) {
         String url = request.getUrl();
         String[] urls = url.split("[?]");
         url = urls[0];

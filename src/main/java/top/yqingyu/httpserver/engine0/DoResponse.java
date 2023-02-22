@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compoment;
+package top.yqingyu.httpserver.engine0;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
@@ -11,9 +11,7 @@ import top.yqingyu.common.server$nio.core.ChannelStatus;
 import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.common.utils.IoUtil;
 import top.yqingyu.common.utils.Status;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.Cookie;
-import top.yqingyu.httpserver.common.HttpVersion;
+import top.yqingyu.httpserver.common.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,11 +25,10 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
  * @author YYJ
@@ -45,40 +42,6 @@ class DoResponse implements Runnable {
     private final Selector selector;
     private final BlockingQueue<Object> QUEUE;
     ConcurrentQyMap<String, Object> status;
-
-
-    static long DEFAULT_SEND_BUF_LENGTH;
-
-    static boolean FILE_COMPRESS_ON;
-
-    static ArrayList<ContentType> UN_DO_COMPRESS_FILE = new ArrayList<>(Arrays.asList(
-            ContentType.APPLICATION_OCTET_STREAM,
-            ContentType.IMAGE_JPEG,
-            ContentType.IMAGE_PNG,
-            ContentType.IMAGE_GIF,
-            ContentType.IMAGE_WEBP,
-            ContentType.IMAGE_BMP,
-            ContentType.IMAGE_SVG,
-            ContentType.IMAGE_X_ICON,
-            ContentType.IMAGE_TIFF,
-            ContentType.VIDEO_AVI,
-            ContentType.VIDEO_MP4,
-            ContentType.VIDEO_MPEG4,
-            ContentType.VIDEO_WMV,
-            ContentType.VIDEO_WEBM,
-            ContentType.AUDIO_MP3
-    ));
-
-    //最大压缩源文件大小 128MB
-    static long MAX_SINGLE_FILE_COMPRESS_SIZE;
-
-    //是否开启缓存池
-    static boolean CACHE_POOL_ON;
-
-    //最大缓存池大小 1.5GB
-    static long MAX_FILE_CACHE_SIZE;
-
-    static long SESSION_TIME_OUT;
 
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 

@@ -1,4 +1,4 @@
-package top.yqingyu.httpserver.compomentv2;
+package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
@@ -6,10 +6,6 @@ import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.httpserver.Version;
-import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.Cookie;
-import top.yqingyu.httpserver.common.HttpAction;
-import top.yqingyu.httpserver.common.HttpVersion;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,7 +22,7 @@ import static top.yqingyu.common.utils.LocalDateTimeUtil.HTTP_FORMATTER;
  * @description
  * @createTime 2022年09月13日 22:10:00
  */
-public class Response  implements HttpAction {
+public class Response implements HttpAction {
 
     public static final Response $404_NOT_FOUND = new Response().setStatue_code("404").setHttpVersion(HttpVersion.V_1_1).setString_body("木有资源啦 ^ Ω ^").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
     public static final Response $413_ENTITY_LARGE = new Response().setStatue_code("413").setHttpVersion(HttpVersion.V_1_1).setString_body("413 Request Entity Too Large").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
@@ -56,11 +52,11 @@ public class Response  implements HttpAction {
         return file_body;
     }
 
-    boolean isAssemble() {
+    public boolean isAssemble() {
         return assemble;
     }
 
-    Response setAssemble(boolean assemble) {
+    public Response setAssemble(boolean assemble) {
         this.assemble = assemble;
         return this;
     }
@@ -168,8 +164,8 @@ public class Response  implements HttpAction {
     public DataMap getHeader() {
         return header;
     }
-
-    String getStrBody() {
+    @Deprecated
+    public String getStrBody() {
         return string_body;
     }
 
@@ -178,12 +174,12 @@ public class Response  implements HttpAction {
         this.string_body = string_body;
         return this;
     }
-
-    void setCompress_body(ByteBuffer compress_body) {
+    @Deprecated
+    public void setCompress_body(ByteBuffer compress_body) {
         this.compress_body = compress_body;
     }
-
-    ByteBuffer gainBodyBytes() throws FileNotFoundException {
+    @Deprecated
+    public ByteBuffer gainBodyBytes() throws FileNotFoundException {
         if (compress)
             return compress_body;
         byte[] bytes = string_body == null ? ArrayUtil.EMPTY_BYTE_ARRAY : string_body.getBytes(StandardCharsets.UTF_8);
@@ -191,8 +187,8 @@ public class Response  implements HttpAction {
         byteBuffer.put(bytes);
         return byteBuffer;
     }
-
-    File getFile_body() {
+    @Deprecated
+    public File getFile_body() {
         return file_body;
     }
 

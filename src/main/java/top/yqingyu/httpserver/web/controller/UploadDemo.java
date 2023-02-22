@@ -2,7 +2,7 @@ package top.yqingyu.httpserver.web.controller;
 
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.common.HttpMethod;
-import top.yqingyu.httpserver.compoment.MultipartFile;
+import top.yqingyu.httpserver.common.MultipartFile;
 
 import java.io.IOException;
 

@@ -1,10 +1,7 @@
-package top.yqingyu.httpserver.compomentv2;
+package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
 import top.yqingyu.common.qydata.DataMap;
-import top.yqingyu.httpserver.common.HttpAction;
-import top.yqingyu.httpserver.common.HttpMethod;
-import top.yqingyu.httpserver.common.HttpVersion;
 
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
@@ -17,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @description
  * @createTime 2022年09月09日 22:02:00
  */
-public class Request implements HttpAction {
+public class Request implements HttpAction{
 
 
     private HttpMethod method;
@@ -40,13 +37,13 @@ public class Request implements HttpAction {
 
     private boolean parseEnd = false;
 
-
-    void setParseEnd() {
+    @Deprecated
+    public void setParseEnd() {
         this.parseEnd = true;
     }
 
-
-    void setMethod(byte[] method) {
+    @Deprecated
+    public void setMethod(byte[] method) {
         this.method = HttpMethod.getMethod(new String(method, StandardCharsets.UTF_8));
     }
 
@@ -58,8 +55,8 @@ public class Request implements HttpAction {
     void setHttpVersion(HttpVersion httpVersion) {
         this.httpVersion = httpVersion;
     }
-
-    void setHttpVersion(byte[] httpVersion) {
+    @Deprecated
+    public void setHttpVersion(byte[] httpVersion) {
         this.httpVersion = HttpVersion.getVersion(new String(httpVersion, StandardCharsets.UTF_8));
     }
 
@@ -67,8 +64,8 @@ public class Request implements HttpAction {
     void setUrl(String url) {
         this.url = url;
     }
-
-    void setUrl(byte[] url) {
+    @Deprecated
+    public void setUrl(byte[] url) {
         //中文解码
         this.url = URLDecoder.decode(new String(url, StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     }
@@ -77,20 +74,20 @@ public class Request implements HttpAction {
         this.header.put(key, obj);
     }
 
-
-    void putUrlParam(String key, Object obj) {
+    @Deprecated
+    public void putUrlParam(String key, Object obj) {
         this.urlParam.put(key, obj);
     }
-
-    void setBody(byte[] body) {
+    @Deprecated
+    public void setBody(byte[] body) {
         this.body = body;
     }
-
-    void setSession(Session session) {
+    @Deprecated
+    public void setSession(Session session) {
         this.session = session;
     }
-
-    void putHeader(byte[] key, byte[] obj) {
+    @Deprecated
+    public void putHeader(byte[] key, byte[] obj) {
         String keyStr = new String(key, StandardCharsets.UTF_8);
         String vStr = obj == null ? "" : new String(obj, StandardCharsets.UTF_8);
         if ("Cookie".equals(keyStr)) {
@@ -112,25 +109,25 @@ public class Request implements HttpAction {
     byte[] getBody() {
         return null;
     }
-
-    byte[] gainBody() {
+    @Deprecated
+    public byte[] gainBody() {
         return body;
     }
 
     DataMap getCookie() {
         return this.cookie;
     }
-
-    boolean canCompress() {
+    @Deprecated
+    public boolean canCompress() {
         String string = header.getString("Accept-Encoding", "");
         return string.toUpperCase().contains("GZIP");
     }
-
-    MultipartFile getMultipartFile() {
+    @Deprecated
+    public MultipartFile getMultipartFile() {
         return multipartFile;
     }
-
-    void setMultipartFile(MultipartFile multipartFile) {
+    @Deprecated
+    public void setMultipartFile(MultipartFile multipartFile) {
         this.multipartFile = multipartFile;
     }
 
