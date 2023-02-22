@@ -104,14 +104,14 @@ public class HttpEventHandler extends EventHandler {
                         if (between > ServerConfig.connectTimeMax && end && !socketChannel.isConnectionPending()) {
                             NET_CHANNELS.remove(i);
                             socketChannel.close();
-                            log.trace("满足关闭条件-关闭channel hash: {}", i);
+                            log.debug("满足关闭条件-关闭channel hash: {}", i);
                         }
                     } catch (Exception e) {
                         NET_CHANNELS.remove(i);
                         if (socketChannel != null) {
                             try {
                                 socketChannel.close();
-                                log.trace("断链异常-关闭channel hash: {}", i);
+                                log.debug("断链异常-关闭channel hash: {}", i);
                             } catch (IOException ex) {
                                 log.error("关闭异常 hash: {}", i, ex);
                             }
