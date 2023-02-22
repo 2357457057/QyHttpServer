@@ -39,7 +39,6 @@ public class HttpEventHandler extends EventHandler {
 
     public HttpEventHandler(Selector selector) throws IOException {
         super(selector);
-        System.out.println(1222222222222222222222222222222D);
         SocketChannelMonitor monitor = new SocketChannelMonitor();
         Thread th = new Thread(monitor);
         th.setName("Monitor-Handler" + Monitor.getAndIncrement());
