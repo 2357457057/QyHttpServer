@@ -39,6 +39,7 @@ public class HttpEventHandler extends EventHandler {
 
     public HttpEventHandler(Selector selector) throws IOException {
         super(selector);
+        System.out.println(1222222222222222222222222222222D);
         SocketChannelMonitor monitor = new SocketChannelMonitor();
         Thread th = new Thread(monitor);
         th.setName("Monitor-Handler" + Monitor.getAndIncrement());
@@ -69,7 +70,7 @@ public class HttpEventHandler extends EventHandler {
             DoResponse doResponse = new DoResponse(selector, QUEUE, status);
             WRITE_POOL.execute(doResponse);
         } catch (Exception e) {
-            Status.statusTrue(status,HttpStatus.isEnd);
+            Status.statusTrue(status, HttpStatus.isEnd);
             throw e;
         }
     }
@@ -90,7 +91,7 @@ public class HttpEventHandler extends EventHandler {
 
         @Override
         public void run() {
-            while (Thread.interrupted()) {
+            while (!Thread.interrupted()) {
                 LocalDateTime a = LocalDateTime.now();
                 NET_CHANNELS.forEach((i, s) -> {
                     NetChannel socketChannel = null;
