@@ -17,10 +17,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -120,6 +117,11 @@ class DoResponse implements Runnable {
                 log.error("", ex);
             }
         } finally {
+            try {
+                netChannel.register(selector, SelectionKey.OP_READ);
+            } catch (ClosedChannelException e) {
+                log.error("", e);
+            }
             log.debug("Response {}", JSON.toJSONString(httpEventEntity.getResponse()));
         }
     }
