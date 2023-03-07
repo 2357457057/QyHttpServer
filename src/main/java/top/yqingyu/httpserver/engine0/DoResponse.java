@@ -103,7 +103,6 @@ class DoResponse implements Runnable {
             } while (httpEventEntity.isNotEnd());
             Status.statusFalse(status, ChannelStatus.READ);
             Status.statusTrue(status, HttpStatus.isEnd);
-            netChannel.register(selector, SelectionKey.OP_READ);
         } catch (NullPointerException e) {
             Status.statusTrue(status, HttpStatus.isEnd);
             Status.statusFalse(status, ChannelStatus.READ);
