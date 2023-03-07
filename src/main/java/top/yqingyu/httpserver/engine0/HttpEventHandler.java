@@ -101,7 +101,7 @@ public class HttpEventHandler extends EventHandler {
                         b = s.get("LocalDateTime", LocalDateTime.class);
                         end = s.get(HttpStatus.isEnd, Boolean.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
-                        if (between > ServerConfig.connectTimeMax && end && !socketChannel.isConnectionPending()) {
+                        if (between > ServerConfig.connectTimeMax && end != null && end && !socketChannel.isConnectionPending()) {
                             NET_CHANNELS.remove(i);
                             socketChannel.close();
                             log.debug("满足关闭条件-关闭channel hash: {}", i);
