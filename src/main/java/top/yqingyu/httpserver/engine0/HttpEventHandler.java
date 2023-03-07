@@ -1,13 +1,13 @@
 package top.yqingyu.httpserver.engine0;
 
 
-import cn.hutool.core.date.LocalDateTimeUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.server$nio.core.EventHandler;
 import top.yqingyu.common.server$nio.core.OperatingRecorder;
+import top.yqingyu.common.utils.LocalDateTimeUtil;
 import top.yqingyu.common.utils.Status;
 import top.yqingyu.httpserver.common.HttpStatus;
 import top.yqingyu.httpserver.common.ServerConfig;
@@ -101,7 +101,7 @@ public class HttpEventHandler extends EventHandler {
                         b = s.get("LocalDateTime", LocalDateTime.class);
                         end = s.get(HttpStatus.isEnd, Boolean.class);
                         long between = LocalDateTimeUtil.between(b, a, ChronoUnit.MILLIS);
-                        if (between > ServerConfig.connectTimeMax && end != null && end && !socketChannel.isConnectionPending()) {
+                        if ((between > ServerConfig.connectTimeMax && end == null) || (between > ServerConfig.connectTimeMax && end && !socketChannel.isConnectionPending())) {
                             NET_CHANNELS.remove(i);
                             socketChannel.close();
                             log.debug("满足关闭条件-关闭channel hash: {}", i);

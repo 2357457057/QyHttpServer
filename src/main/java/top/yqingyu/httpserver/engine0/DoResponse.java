@@ -103,6 +103,7 @@ class DoResponse implements Runnable {
             } while (httpEventEntity.isNotEnd());
             Status.statusFalse(status, ChannelStatus.READ);
             Status.statusTrue(status, HttpStatus.isEnd);
+            netChannel.register(selector, SelectionKey.OP_READ);
         } catch (NullPointerException e) {
             Status.statusTrue(status, HttpStatus.isEnd);
             Status.statusFalse(status, ChannelStatus.READ);
@@ -116,11 +117,6 @@ class DoResponse implements Runnable {
                 log.error("", ex);
             }
         } finally {
-            try {
-                netChannel.register(selector, SelectionKey.OP_READ);
-            } catch (ClosedChannelException e) {
-                log.error("", e);
-            }
             log.debug("Response {}", JSON.toJSONString(httpEventEntity.getResponse()));
         }
     }
