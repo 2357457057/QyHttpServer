@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @description
  * @createTime 2022年09月09日 22:02:00
  */
-public class Request implements HttpAction{
+public class Request implements HttpAction {
 
 
     private HttpMethod method;
@@ -47,23 +47,29 @@ public class Request implements HttpAction{
         this.method = HttpMethod.getMethod(new String(method, StandardCharsets.UTF_8));
     }
 
-    void setMethod(HttpMethod method) {
+    public void setMethod(HttpMethod method) {
         this.method = method;
+    }
+
+    public void setMethod(String method) {
+        this.method = HttpMethod.getMethod(method);
     }
 
 
     void setHttpVersion(HttpVersion httpVersion) {
         this.httpVersion = httpVersion;
     }
+
     @Deprecated
     public void setHttpVersion(byte[] httpVersion) {
         this.httpVersion = HttpVersion.getVersion(new String(httpVersion, StandardCharsets.UTF_8));
     }
 
 
-    void setUrl(String url) {
+    public void setUrl(String url) {
         this.url = url;
     }
+
     @Deprecated
     public void setUrl(byte[] url) {
         //中文解码
@@ -78,14 +84,17 @@ public class Request implements HttpAction{
     public void putUrlParam(String key, Object obj) {
         this.urlParam.put(key, obj);
     }
+
     @Deprecated
     public void setBody(byte[] body) {
         this.body = body;
     }
+
     @Deprecated
     public void setSession(Session session) {
         this.session = session;
     }
+
     @Deprecated
     public void putHeader(byte[] key, byte[] obj) {
         String keyStr = new String(key, StandardCharsets.UTF_8);
@@ -104,11 +113,26 @@ public class Request implements HttpAction{
             this.header.put(keyStr, vStr);
     }
 
+    public void putHeader(String key, String val) {
+        if ("Cookie".equals(key)) {
+            String[] cookies = val.split("; ");
+            for (String coo : cookies) {
+                String[] split = coo.split("=");
+                //session逻辑
+                if (Session.name.equals(split[0]) && Session.SESSION_CONTAINER.containsKey(split[1])) {
+                    this.session = Session.SESSION_CONTAINER.get(split[0]);
+                }
+                this.cookie.put(split[0], split[1]);
+            }
+        } else
+            this.header.put(key, val);
+    }
 
     //防止body过大导致toString异常
     byte[] getBody() {
         return null;
     }
+
     @Deprecated
     public byte[] gainBody() {
         return body;
@@ -117,15 +141,18 @@ public class Request implements HttpAction{
     DataMap getCookie() {
         return this.cookie;
     }
+
     @Deprecated
     public boolean canCompress() {
         String string = header.getString("Accept-Encoding", "");
         return string.toUpperCase().contains("GZIP");
     }
+
     @Deprecated
     public MultipartFile getMultipartFile() {
         return multipartFile;
     }
+
     @Deprecated
     public void setMultipartFile(MultipartFile multipartFile) {
         this.multipartFile = multipartFile;

@@ -54,6 +54,33 @@ public class Cookie {
         return sb.append("\r\n").toString();
     }
 
+    public String toCookieValStr() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(name).append("=").append(value == null ? "" : value);
+
+        if (version != 0)
+            sb.append("; ").append("Version").append("=").append(version);
+
+        if (comment != null)
+            sb.append("; ").append("Comment").append("=").append(comment);
+
+        if (path != null)
+            sb.append("; ").append("Path").append("=").append(path);
+
+        if (domain != null)
+            sb.append("; ").append("Domain").append("=").append(domain);
+
+        sb.append("; ").append("Max-Age").append("=").append(maxAge);
+
+        if (secure)
+            sb.append("; ").append("Secure");
+
+        if (httpOnly)
+            sb.append(";").append("HttpOnly");
+
+        return sb.toString();
+    }
+
     public String getName() {
         return name;
     }

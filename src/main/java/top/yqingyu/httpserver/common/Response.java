@@ -41,6 +41,15 @@ public class Response implements HttpAction {
     private File file_body;
 
     private ByteBuffer compress_body;
+    private byte[] compressByteBody;
+
+    public byte[] getCompressByteBody() {
+        return compressByteBody;
+    }
+
+    public void setCompressByteBody(byte[] compressByteBody) {
+        this.compressByteBody = compressByteBody;
+    }
 
     //是否组装完毕
     private boolean assemble = false;
@@ -164,6 +173,7 @@ public class Response implements HttpAction {
     public DataMap getHeader() {
         return header;
     }
+
     @Deprecated
     public String getStrBody() {
         return string_body;
@@ -174,10 +184,12 @@ public class Response implements HttpAction {
         this.string_body = string_body;
         return this;
     }
+
     @Deprecated
     public void setCompress_body(ByteBuffer compress_body) {
         this.compress_body = compress_body;
     }
+
     @Deprecated
     public ByteBuffer gainBodyBytes() throws FileNotFoundException {
         if (compress)
@@ -187,6 +199,14 @@ public class Response implements HttpAction {
         byteBuffer.put(bytes);
         return byteBuffer;
     }
+
+    @Deprecated
+    public byte[] gainBodyBytes2() throws FileNotFoundException {
+        if (compress)
+            return compressByteBody;
+        return string_body == null ? ArrayUtil.EMPTY_BYTE_ARRAY : string_body.getBytes(StandardCharsets.UTF_8);
+    }
+
     @Deprecated
     public File getFile_body() {
         return file_body;
@@ -196,6 +216,9 @@ public class Response implements HttpAction {
         this.cookie.add(c);
     }
 
+    public ConcurrentDataSet<Cookie> getCookies() {
+        return this.cookie;
+    }
 
     @Override
     public String toString() {

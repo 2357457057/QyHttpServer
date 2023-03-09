@@ -1,5 +1,5 @@
 server:
-  engine: 0
+  engine: 2
   port: 80
   handler-num: 4
   per-worker-num: 8
@@ -7,7 +7,7 @@ server:
   open-resource: true
   open-controller: true
   connect-time-max: 15S
-  local-resource-path: [ F:/ ]
+  local-resource-path: [ H:/ ]
   resource-reloading-time: 60S
   controller-package: [ top.yqingyu.httpserver.web.controller ]
 
