@@ -1,10 +1,12 @@
 package top.yqingyu.httpserver.engine2;
 
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.apache.commons.lang3.StringUtils;
 import top.yqingyu.httpserver.common.LocationMapping;
+import top.yqingyu.httpserver.common.MultipartFile;
 import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
@@ -21,11 +23,23 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         String name = method.name();
         String uri = msg.uri();
         HttpHeaders headers = msg.headers();
-
+        ByteBuf content = msg.content();
         Request qyReq = new Request();
+
+        while (content.readableBytes() > 0) {
+            int readabled = content.readableBytes();
+            byte[] bytes = new byte[readabled];
+            content.readBytes(bytes);
+            qyReq.setBody(bytes);
+        }
+
+        if (Dict.MULTIPART_FILE_LIST.equals(headers.get(Dict.MULTIPART_FILE_LIST))) {
+            List<MultipartFile> multipartFileList = HttpMultipartFileHandler.getMultipartFileList((DefaultFullHttpRequest) msg);
+            qyReq.setMultipartFile(multipartFileList.get(0));
+        }
+
         qyReq.setUrl(uri);
         qyReq.setMethod(name);
-
         int i = StringUtils.indexOf(uri, '?');
         if (i != -1) {
             String substring = uri.substring(i + 1);

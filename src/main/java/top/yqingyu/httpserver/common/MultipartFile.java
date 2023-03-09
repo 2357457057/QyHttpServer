@@ -4,6 +4,7 @@ import cn.hutool.core.lang.UUID;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -31,7 +32,7 @@ public class MultipartFile {
 
         String originFileName = UUID.randomUUID().toString();
         if (split.length >= 2)
-            originFileName = originFileName + split[split.length - 1];
+            originFileName = originFileName + "." + split[split.length - 1];
 
         file = new File(path + originFileName);
 
@@ -86,12 +87,14 @@ public class MultipartFile {
         transferTo(filePath);
 
     }
+
     @Deprecated
     public void write(byte[] bytes) throws IOException {
         fileOutputStream.write(bytes);
     }
+
     @Deprecated
-   public MultipartFile endWrite() throws IOException {
+    public MultipartFile endWrite() throws IOException {
         fileOutputStream.close();
         return this;
     }
