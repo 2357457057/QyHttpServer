@@ -2,6 +2,7 @@ package top.yqingyu.httpserver.engine2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
@@ -36,11 +37,7 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
             File file_body = response.getFile_body();
             if (file_body != null && !response.isCompress()) {
                 RandomAccessFile randomAccessFile;
-                try {
-                    randomAccessFile = new RandomAccessFile(file_body, "r");  //只读模式
-                } catch (FileNotFoundException e) {
-                    return;
-                }
+                randomAccessFile = new RandomAccessFile(file_body, "r");  //只读模式
                 long fileLength = randomAccessFile.length();    //文件大小
                 HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
                 addHeader(nettyResponse, response);
@@ -49,11 +46,14 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                 ctx.write(nettyResponse);
                 ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 1300), ctx.newProgressivePromise());
                 ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-
+                randomAccessFile.close();
             } else {
                 String s = response.toString();
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
                 out.writeBytes(response.gainBodyBytes2());
+                ChannelPipeline pipeline = ctx.pipeline();
+                // 与此pipeline有冲突
+                pipeline.remove("codec");
             }
         }
     }
