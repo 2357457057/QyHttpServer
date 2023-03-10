@@ -40,7 +40,7 @@ public class ServerInitial extends ChannelInitializer<SocketChannel> {
                 synchronized (SSL_LOCK) {
                     if (!sslIsInit) {
                         SslContextBuilder contextBuilder = SslContextBuilder.forServer(new File(ServerConfig.SSL_CERT_PATH), new File(ServerConfig.SSL_KEY_PATH));
-                        contextBuilder.startTls(true);
+                        contextBuilder.startTls(false);
                         context = contextBuilder.build();
                         sslIsInit = true;
                     }
@@ -49,7 +49,7 @@ public class ServerInitial extends ChannelInitializer<SocketChannel> {
             SSLEngine engine = context.newEngine(ch.alloc());
             engine.setUseClientMode(false);    // 设置SslEngine是client或者是server模式
             // 添加SslHandler到pipeline作为第一个处理器
-            ch.pipeline().addFirst("ssl", new SslHandler(engine, true));
+            ch.pipeline().addFirst("ssl", new SslHandler(engine, false));
 
         }
     }
