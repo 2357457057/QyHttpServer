@@ -1,5 +1,7 @@
 package top.yqingyu.httpserver.common;
 
+import java.io.Serializable;
+
 /**
  * @author YYJ
  * @version 1.0.0
@@ -7,7 +9,7 @@ package top.yqingyu.httpserver.common;
  * @description
  * @createTime 2022年09月13日 22:13:00
  */
-public enum HttpVersion {
+public enum HttpVersion implements Serializable {
 
     V_1_1("HTTP/1.1"),
     V_2("HTTP/2"),

@@ -1,6 +1,8 @@
 package top.yqingyu.httpserver.common;
 
 
+import java.io.Serializable;
+
 /**
  * @author YYJ
  * @version 1.0.0
@@ -8,5 +10,5 @@ package top.yqingyu.httpserver.common;
  * @description 为方便请求解析时需返回 {@link Request} 和 {@link Response}
  * @createTime 2022年09月19日 14:41:00
  */
-public interface HttpAction {
+public interface HttpAction extends Serializable {
 }

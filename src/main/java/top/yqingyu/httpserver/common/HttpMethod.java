@@ -1,5 +1,7 @@
 package top.yqingyu.httpserver.common;
 
+import java.io.Serializable;
+
 /**
  * @author YYJ
  * @version 1.0.0
@@ -7,7 +9,7 @@ package top.yqingyu.httpserver.common;
  * @description
  * @createTime 2022年09月14日 11:30:00
  */
-public enum HttpMethod {
+public enum HttpMethod implements Serializable {
     GET,
     POST,
 

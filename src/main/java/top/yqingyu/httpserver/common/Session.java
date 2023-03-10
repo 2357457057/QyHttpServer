@@ -3,6 +3,7 @@ package top.yqingyu.httpserver.common;
 import cn.hutool.core.lang.UUID;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 
+import java.io.Serializable;
 import java.time.ZonedDateTime;
 import java.util.Map;
 
@@ -14,11 +15,10 @@ import java.util.Map;
  * @description
  * @createTime 2022年09月17日 10:44:00
  */
-public class Session {
+public class Session implements Serializable {
 
     public static final String name = "sessionVersionID";
-    @Deprecated
-    public static final ConcurrentDataMap<String, Session> SESSION_CONTAINER = new ConcurrentDataMap<>();
+    static final ConcurrentDataMap<String, Session> SESSION_CONTAINER = new ConcurrentDataMap<>();
 
 
     private final String sessionVersionID;
@@ -32,6 +32,7 @@ public class Session {
         sessionData = new ConcurrentDataMap<>();
         newInstance = true;
     }
+
     @Deprecated
     public String getSessionVersionID() {
         return sessionVersionID;
@@ -68,10 +69,12 @@ public class Session {
     public void clear() {
         this.sessionData.clear();
     }
+
     @Deprecated
     public boolean isNewInstance() {
         return newInstance;
     }
+
     @Deprecated
     public void setNewInstance(boolean newInstance) {
         this.newInstance = newInstance;

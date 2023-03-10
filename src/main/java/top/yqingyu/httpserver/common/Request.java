@@ -3,6 +3,7 @@ package top.yqingyu.httpserver.common;
 import com.alibaba.fastjson2.JSON;
 import top.yqingyu.common.qydata.DataMap;
 
+import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -14,7 +15,7 @@ import java.nio.charset.StandardCharsets;
  * @description
  * @createTime 2022年09月09日 22:02:00
  */
-public class Request implements HttpAction {
+public class Request implements HttpAction, Serializable {
 
 
     private HttpMethod method;

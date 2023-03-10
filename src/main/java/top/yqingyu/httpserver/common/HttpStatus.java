@@ -1,7 +1,9 @@
 package top.yqingyu.httpserver.common;
 
 
-public interface HttpStatus {
+import java.io.Serializable;
+
+public interface HttpStatus extends Serializable {
     String isEnd = "isResponseEnd";
 
 }

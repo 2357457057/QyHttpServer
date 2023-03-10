@@ -2,6 +2,7 @@ package top.yqingyu.httpserver.common;
 
 import top.yqingyu.httpserver.common.HttpMethod;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.Arrays;
@@ -13,7 +14,7 @@ import java.util.Arrays;
  * @description
  * @createTime 2022年09月14日 20:53:00
  */
-public class Bean {
+public class Bean implements Serializable {
     private Type type;
     private Object obj;
     private Method method;

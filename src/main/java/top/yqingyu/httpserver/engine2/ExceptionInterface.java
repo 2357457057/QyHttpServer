@@ -10,21 +10,18 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.yqingyu.common.exception.IllegalQyMsgException;
 import top.yqingyu.httpserver.exception.HttpException;
-
-import java.net.SocketException;
 
 /**
  * 具体的异常消息实现 ，可重写default方法
  */
-public interface HttpServerExceptionHandler {
+public interface ExceptionInterface {
 
-    HttpResponseStatus NotAMultipartFileInterface = HttpResponseStatus.valueOf(400,"NotAMultipartFileInterface");
+    HttpResponseStatus NotAMultipartFileInterface = HttpResponseStatus.valueOf(400, "NotAMultipartFileInterface");
     FullHttpResponse METHOD_NOT_ALLOWED = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.METHOD_NOT_ALLOWED, Unpooled.EMPTY_BUFFER);
     FullHttpResponse INTERNAL_SERVER_ERROR = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.INTERNAL_SERVER_ERROR, Unpooled.EMPTY_BUFFER);
     FullHttpResponse NotAMultipartFileInterfaceResp = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, NotAMultipartFileInterface, Unpooled.EMPTY_BUFFER);
-    Logger logger = LoggerFactory.getLogger(HttpServerExceptionHandler.class);
+    Logger logger = LoggerFactory.getLogger(ExceptionInterface.class);
 
     default void handle(ChannelHandlerContext ctx, Throwable cause) {
         String causeMessage = cause.getMessage();
@@ -41,10 +38,9 @@ public interface HttpServerExceptionHandler {
 
         channelFuture.addListener((ChannelFutureListener) future -> {
             if (!future.isSuccess()) {
-                logger.debug("", future.cause());
-            }else {
+                ctx.close();
             }
-            ctx.close();
+            logger.debug("{}", causeMessage, future.cause());
         });
     }
 }

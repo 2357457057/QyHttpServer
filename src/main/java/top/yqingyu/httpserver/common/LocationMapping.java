@@ -191,7 +191,7 @@ public class LocationMapping {
         }
     }
 
-    public static void beanResourceMapping(Request request, Response response) {
+    public static void beanResourceMapping(Request request, Response response, boolean $throw) throws InvocationTargetException, IllegalAccessException {
         String url = request.getUrl();
         String[] urls = url.split("[?]");
         url = urls[0];
@@ -321,6 +321,9 @@ public class LocationMapping {
             }
 
         } catch (HttpException.MethodNotSupposedException e) {
+            if ($throw) {
+                throw e;
+            }
             response
                     .setString_body("请求方法不支持")
                     .setStatue_code("400")
@@ -328,8 +331,10 @@ public class LocationMapping {
                     .putHeaderDate(ZonedDateTime.now())
                     .setAssemble(true);
 
-        } catch (
-                Exception e) {
+        } catch (Exception e) {
+            if ($throw) {
+                throw e;
+            }
             response
                     .setString_body("呜呜，人家坏掉了")
                     .setStatue_code("500")

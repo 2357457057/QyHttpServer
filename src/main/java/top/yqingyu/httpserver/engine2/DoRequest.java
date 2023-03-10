@@ -6,14 +6,14 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.yqingyu.httpserver.common.LocationMapping;
-import top.yqingyu.httpserver.common.MultipartFile;
-import top.yqingyu.httpserver.common.Request;
-import top.yqingyu.httpserver.common.Response;
+import top.yqingyu.common.qydata.ConcurrentDataMap;
+import top.yqingyu.httpserver.common.*;
 
+import java.lang.reflect.Field;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -22,8 +22,26 @@ import java.util.Map;
 
 import static top.yqingyu.httpserver.common.ServerConfig.SESSION_TIME_OUT;
 
-public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
-    static Logger logger = LoggerFactory.getLogger(HttpResponseHandler.class);
+public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
+    static Logger logger = LoggerFactory.getLogger(DoResponse.class);
+
+    private static final ConcurrentDataMap<String, Session> SESSION_CONTAINER;
+
+    static {
+        ConcurrentDataMap<String, Session> temp;
+        try {
+            Field sessionContainer = Session.class.getDeclaredField("SESSION_CONTAINER");
+            sessionContainer.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
+
+            temp = temp2;
+        } catch (Exception ignore) {
+            temp = new ConcurrentDataMap<>();
+        }
+        SESSION_CONTAINER = temp;
+    }
 
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
@@ -42,7 +60,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         }
 
         if (Dict.MULTIPART_FILE_LIST.equals(headers.get(Dict.MULTIPART_FILE_LIST))) {
-            List<MultipartFile> multipartFileList = HttpMultipartFileHandler.getMultipartFileList((DefaultFullHttpRequest) msg);
+            List<MultipartFile> multipartFileList = DoRequestPre.getMultipartFileList((DefaultFullHttpRequest) msg);
             qyReq.setMultipartFile(multipartFileList.get(0));
         }
 
@@ -70,18 +88,18 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
 
         if (!qyResp.isAssemble()) {
             //session相关逻辑
-            top.yqingyu.httpserver.common.Session session;
-            String sessionID = qyReq.getCookie(top.yqingyu.httpserver.common.Session.name);
-            if (top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.containsKey(sessionID))
-                session = top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.get(sessionID);
+            Session session;
+            String sessionID = qyReq.getCookie(Session.name);
+            if (SESSION_CONTAINER.containsKey(sessionID))
+                session = SESSION_CONTAINER.get(sessionID);
             else {
-                session = new top.yqingyu.httpserver.common.Session();
-                top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
+                session = new Session();
+                SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
             qyReq.setSession(session);
 
             //接口资源
-            LocationMapping.beanResourceMapping(qyReq, qyResp);
+            LocationMapping.beanResourceMapping(qyReq, qyResp, true);
 
             if (qyResp.isAssemble() && qyReq.getSession().isNewInstance()) {
                 session.setNewInstance(false);

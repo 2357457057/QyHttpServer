@@ -19,6 +19,9 @@ public class ServerConfig {
 
     public static long resourceReloadingTime;
     public static int ENGINE;
+    public static boolean SSL_ENABLE;
+    public static String SSL_CERT_PATH;
+    public static String SSL_KEY_PATH;
     public static int port;
     public static int handlerNumber;
     public static int perHandlerWorker;
@@ -61,6 +64,7 @@ public class ServerConfig {
             ContentType.VIDEO_WEBM,
             ContentType.AUDIO_MP3
     ));
+
     public static void load() {
         DataMap yamlUtil = YamlUtil.loadYaml("server-cfg", YamlUtil.LoadType.BOTH).getCfgData();
         DataMap cfg = yamlUtil.getNotNUllData("server-cfg.yml");
@@ -74,11 +78,16 @@ public class ServerConfig {
                 handlerNumber = server.getIntValue("handler-num", 4);
                 perHandlerWorker = server.getIntValue("per-worker-num", 4);
                 Long workerKeepLiveTime = server.$2MILLS("worker-keep-live-time", UnitUtil.$2MILLS("2H"));
-                ENGINE = server.getIntValue("engine",0);
+                ENGINE = server.getIntValue("engine", 2);
                 resourceReloadingTime = server.$2MILLS("resource-reloading-time", UnitUtil.$2MILLS("60S"));
                 connectTimeMax = server.$2MILLS("connect-time-max", UnitUtil.$2MILLS("15S"));
                 boolean open_resource = server.getBooleanValue("open-resource", true);
                 boolean open_controller = server.getBooleanValue("open-controller", true);
+
+                DataMap ssl = server.getNotNUllData("ssl");
+                SSL_ENABLE = ssl.getBoolean("enable", false);
+                SSL_CERT_PATH = ssl.getString("cert-path", "/");
+                SSL_KEY_PATH = ssl.getString("key-path", "/");
 
                 if (open_resource) {
                     DataList pathList = server.getDataList("local-resource-path");

@@ -3,10 +3,8 @@ package top.yqingyu.httpserver.engine2;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 
-import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.http.*;
-import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
 import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.utils.ArrayUtil;
@@ -27,11 +25,11 @@ import static top.yqingyu.common.utils.ArrayUtil.splitByTarget;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.engine2.HttpMultipartFileHandler
+ * @ClassName top.yqingyu.httpserver.engine2.DoRequestPre
  * @description
  * @createTime 2023年03月10日 00:08:00
  */
-public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject> {
+public class DoRequestPre extends MessageToMessageDecoder<HttpObject> {
 
     private volatile boolean isMultipartFile = false;
     private volatile MultipartFile multipartFile;

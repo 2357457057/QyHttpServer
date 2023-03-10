@@ -9,6 +9,7 @@ import top.yqingyu.httpserver.Version;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
@@ -22,7 +23,7 @@ import static top.yqingyu.common.utils.LocalDateTimeUtil.HTTP_FORMATTER;
  * @description
  * @createTime 2022年09月13日 22:10:00
  */
-public class Response implements HttpAction {
+public class Response implements HttpAction, Serializable {
 
     public static final Response $404_NOT_FOUND = new Response().setStatue_code("404").setHttpVersion(HttpVersion.V_1_1).setString_body("木有资源啦 ^ Ω ^").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
     public static final Response $413_ENTITY_LARGE = new Response().setStatue_code("413").setHttpVersion(HttpVersion.V_1_1).setString_body("413 Request Entity Too Large").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);

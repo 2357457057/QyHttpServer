@@ -1,15 +1,11 @@
 package top.yqingyu.httpserver.engine2;
 
-import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.stream.ChunkedFile;
 import io.netty.handler.stream.ChunkedNioFile;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
@@ -29,7 +25,7 @@ import static io.netty.handler.codec.http.HttpUtil.setContentLength;
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 
-public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
+public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 
@@ -47,12 +43,12 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                 addHeader(nettyResponse, response);
                 setContentLength(nettyResponse, fileChannel.size());
 
-                ctx.pipeline().addFirst("respEncode", new HttpResponseEncoder());
+                ctx.pipeline().addAfter("DoResponse", "HttpResponseEncoder", new HttpResponseEncoder());
                 ctx.write(nettyResponse);
                 ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
                 ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                 channelFuture.addListener(e -> {
-                    ctx.pipeline().remove("respEncode");
+                    ctx.pipeline().remove("HttpResponseEncoder");
                     fileChannel.close();
                 });
             } else {

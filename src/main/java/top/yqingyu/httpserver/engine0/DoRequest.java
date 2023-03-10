@@ -28,7 +28,6 @@ import static top.yqingyu.httpserver.common.ServerConfig.*;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.route.DoRequest
  * @description
  * @createTime 2022年09月14日 18:34:00
  */

@@ -12,6 +12,8 @@ import top.yqingyu.common.server$aio.Session;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
@@ -26,7 +28,7 @@ import static top.yqingyu.httpserver.common.ServerConfig.*;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.component.DoResponse
+ * @ClassName top.yqingyu.httpserver.component.DoRequest
  * @description
  * @createTime 2022年09月19日 15:19:00
  */
@@ -41,6 +43,23 @@ class DoResponse implements Callable<Object> {
     private static final Logger log = LoggerFactory.getLogger(DoResponse.class);
     HttpEventEntity httpEventEntity;
 
+    private static final ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session> SESSION_CONTAINER;
+
+    static {
+        ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session> temp;
+        try {
+            Field sessionContainer = top.yqingyu.httpserver.common.Session.class.getDeclaredField("SESSION_CONTAINER");
+            sessionContainer.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session> temp2 = (ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session>) sessionContainer.get(null);
+
+            temp = temp2;
+        } catch (Exception ignore) {
+            temp = new ConcurrentDataMap<>();
+        }
+        SESSION_CONTAINER = temp;
+    }
 
     public DoResponse(HttpEventEntity httpEventEntity, Session session) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
         this.session = session;
@@ -101,7 +120,7 @@ class DoResponse implements Callable<Object> {
      * @author YYJ
      * @description
      */
-    void initResponse(Request request, AtomicReference<Response> resp) {
+    void initResponse(Request request, AtomicReference<Response> resp) throws InvocationTargetException, IllegalAccessException {
 
         Response response = resp.get();
         //优先文件资源
@@ -114,16 +133,16 @@ class DoResponse implements Callable<Object> {
             //session相关逻辑
             top.yqingyu.httpserver.common.Session session;
             String sessionID = request.getCookie(top.yqingyu.httpserver.common.Session.name);
-            if (top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.containsKey(sessionID))
-                session = top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.get(sessionID);
+            if (SESSION_CONTAINER.containsKey(sessionID))
+                session = SESSION_CONTAINER.get(sessionID);
             else {
                 session = new top.yqingyu.httpserver.common.Session();
-                top.yqingyu.httpserver.common.Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
+                SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
             request.setSession(session);
 
             //接口资源
-            LocationMapping.beanResourceMapping(request, response);
+            LocationMapping.beanResourceMapping(request, response,false);
 
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {

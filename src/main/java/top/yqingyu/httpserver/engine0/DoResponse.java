@@ -16,6 +16,8 @@ import top.yqingyu.httpserver.common.*;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
 import java.nio.charset.Charset;
@@ -25,12 +27,12 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.component.DoResponse
  * @description
  * @createTime 2022年09月19日 15:19:00
  */
@@ -38,13 +40,31 @@ class DoResponse implements Runnable {
 
     private final Selector selector;
     private final BlockingQueue<Object> QUEUE;
-    ConcurrentQyMap<String, Object> status;
+    private final ConcurrentQyMap<String, Object> status;
 
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
 
     private static final Logger log = LoggerFactory.getLogger(DoResponse.class);
+
+    private static final ConcurrentDataMap<String, Session> SESSION_CONTAINER;
+
+    static {
+        ConcurrentDataMap<String, Session> temp;
+        try {
+            Field sessionContainer = Session.class.getDeclaredField("SESSION_CONTAINER");
+            sessionContainer.setAccessible(true);
+
+            @SuppressWarnings("unchecked")
+            ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
+
+            temp = temp2;
+        } catch (Exception ignore) {
+            temp = new ConcurrentDataMap<>();
+        }
+        SESSION_CONTAINER = temp;
+    }
 
 
     public DoResponse(Selector selector, BlockingQueue<Object> queue, ConcurrentQyMap<String, Object> status) { //, OperatingRecorder<Integer> SOCKET_CHANNEL_ACK) {
@@ -128,7 +148,7 @@ class DoResponse implements Runnable {
      * @author YYJ
      * @description
      */
-    void initResponse(Request request, AtomicReference<Response> resp) {
+    void initResponse(Request request, AtomicReference<Response> resp) throws InvocationTargetException, IllegalAccessException {
 
         Response response = resp.get();
         //优先文件资源
@@ -141,16 +161,16 @@ class DoResponse implements Runnable {
             //session相关逻辑
             Session session;
             String sessionID = request.getCookie(Session.name);
-            if (Session.SESSION_CONTAINER.containsKey(sessionID))
-                session = Session.SESSION_CONTAINER.get(sessionID);
+            if (SESSION_CONTAINER.containsKey(sessionID))
+                session = SESSION_CONTAINER.get(sessionID);
             else {
                 session = new Session();
-                Session.SESSION_CONTAINER.put(session.getSessionVersionID(), session);
+                SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
             request.setSession(session);
 
             //接口资源
-            LocationMapping.beanResourceMapping(request, response);
+            LocationMapping.beanResourceMapping(request, response,false);
 
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {

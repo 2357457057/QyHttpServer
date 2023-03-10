@@ -8,7 +8,6 @@ import top.yqingyu.httpserver.common.Response;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.compoment.HttpEventEntity
  * @description
  * @createTime 2022年09月19日 15:45:00
  */

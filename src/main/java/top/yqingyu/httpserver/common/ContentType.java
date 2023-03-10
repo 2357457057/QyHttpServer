@@ -14,15 +14,9 @@ import java.util.*;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.entity.ContentType
- * @description
- * @createTime 2022年09月11日 00:03:00
  */
 public class ContentType implements Serializable {
 
-
-    @Serial
-    private static final long serialVersionUID = -7768694718232371896L;
 
     private String adviceStatusCode;
 
@@ -34,10 +28,6 @@ public class ContentType implements Serializable {
         this.adviceStatusCode = adviceStatusCode;
         return this;
     }
-
-    /**
-     * Param that represent {@code charset} constant.
-     */
     private static final String CHARSET = "charset";
 
 

@@ -1,5 +1,7 @@
 package top.yqingyu.httpserver.common;
 
+import java.io.Serializable;
+
 /**
  * @author YYJ
  * @version 1.0.0
@@ -7,7 +9,7 @@ package top.yqingyu.httpserver.common;
  * @description
  * @createTime 2022年09月17日 14:47:00
  */
-public class Cookie {
+public class Cookie implements Serializable {
 
     private final String name;
     private String value;

@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.event$handler.HttpRequestHandler
  * @description
  * @createTime 2022年09月09日 18:05:00
  */
@@ -41,7 +40,7 @@ public class HttpEventHandler extends EventHandler {
         super(selector);
         SocketChannelMonitor monitor = new SocketChannelMonitor();
         Thread th = new Thread(monitor);
-        th.setName("Monitor-HttpRequestHandler" + Monitor.getAndIncrement());
+        th.setName("Monitor-DoRequest" + Monitor.getAndIncrement());
         th.setDaemon(true);
         th.start();
     }

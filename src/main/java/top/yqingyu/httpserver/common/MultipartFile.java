@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
  * @description
  * @createTime 2022年10月27日 18:23:00
  */
-public class MultipartFile {
+public class MultipartFile implements Serializable {
     private final String fileName;
 
     private final File file;
