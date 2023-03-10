@@ -37,7 +37,6 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpEventEntity msg, ByteBuf out) throws Exception {
         Response response = msg.getResponse();
-        Request msgRequest = msg.getRequest();
         if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
             compress(msg);
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
@@ -50,14 +49,12 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
 
                 ctx.pipeline().addFirst("respEncode", new HttpResponseEncoder());
                 ctx.write(nettyResponse);
-                ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 2048), ctx.newProgressivePromise());
+                ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
                 ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                 channelFuture.addListener(e -> {
                     ctx.pipeline().remove("respEncode");
                     fileChannel.close();
-                    System.out.println(1);
                 });
-                System.out.println(2);
             } else {
                 String s = response.toString();
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
