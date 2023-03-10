@@ -1,8 +1,7 @@
 package top.yqingyu.httpserver.engine2;
 
 import io.netty.buffer.ByteBuf;
-import io.netty.channel.ChannelHandlerContext;
-import io.netty.channel.ChannelPipeline;
+import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
@@ -16,6 +15,7 @@ import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
@@ -43,17 +43,18 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                 addHeader(nettyResponse, response);
                 setContentLength(nettyResponse, fileLength);
                 nettyResponse.headers().set("Content-Type", ContentType.parseContentType(msgRequest.getUrl()));
+                ctx.pipeline().addFirst("respEncode", new HttpResponseEncoder());
                 ctx.write(nettyResponse);
                 ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 1300), ctx.newProgressivePromise());
-                ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+                ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+                channelFuture.addListener(e -> {
+                    ctx.pipeline().remove("respEncode");
+                });
                 randomAccessFile.close();
             } else {
                 String s = response.toString();
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
                 out.writeBytes(response.gainBodyBytes2());
-                ChannelPipeline pipeline = ctx.pipeline();
-                // 与此pipeline有冲突
-                pipeline.remove("codec");
             }
         }
     }

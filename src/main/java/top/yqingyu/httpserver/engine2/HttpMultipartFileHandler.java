@@ -2,8 +2,11 @@ package top.yqingyu.httpserver.engine2;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
+
+import io.netty.handler.codec.DecoderException;
 import io.netty.handler.codec.MessageToMessageDecoder;
 import io.netty.handler.codec.http.*;
+import io.netty.util.ReferenceCountUtil;
 import org.jetbrains.annotations.NotNull;
 import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.utils.ArrayUtil;
@@ -32,8 +35,9 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
 
     private volatile boolean isMultipartFile = false;
     private volatile MultipartFile multipartFile;
-    private HttpMessage httpMessage;
+    private volatile HttpMessage httpMessage;
 
+    private volatile DefaultFullHttpRequest fullHttpRequest;
     private byte[] boundary;
     private byte[] boundaryEnd;
 
@@ -58,9 +62,11 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
                 isMultipartFile = true;
                 boundary = ("--" + contentType.getParameter("boundary") + "\r\n").getBytes(StandardCharsets.UTF_8);
                 boundaryEnd = ("\r\n--" + contentType.getParameter("boundary") + "--\r\n").getBytes(StandardCharsets.UTF_8);
-                ctx.pipeline().remove("Aggregator");
             } else {
-                ctx.fireChannelRead(httpMessage);
+                if (httpMessage instanceof DefaultHttpRequest httpRequest) {
+                    fullHttpRequest = new DefaultFullHttpRequest(httpRequest.protocolVersion(), httpRequest.method(), httpRequest.uri());
+                    fullHttpRequest.headers().add(httpRequest.headers());
+                }
             }
 
         } else if (isContentMessage(httpObject)) {
@@ -68,7 +74,9 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
             if (isLastContentMessage(httpContent)) {
                 LastHttpContent lastHttpContent = (LastHttpContent) httpContent;
                 if (!isMultipartFile) {
-                    ctx.fireChannelRead(lastHttpContent);
+                    ByteBuf content = fullHttpRequest.content();
+                    content.writeBytes(lastHttpContent.content());
+                    ctx.fireChannelRead(fullHttpRequest);
                     return;
                 }
                 ByteBuf content = httpContent.content();
@@ -79,7 +87,7 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
                 multipartFile.write(bytes1.get(0));
                 multipartFile.endWrite();
                 if (httpMessage instanceof DefaultHttpRequest httpRequest) {
-                    DefaultFullHttpRequest fullHttpRequest = new DefaultFullHttpRequest(httpRequest.protocolVersion(), httpRequest.method(), httpRequest.uri());
+                    fullHttpRequest = new DefaultFullHttpRequest(httpRequest.protocolVersion(), httpRequest.method(), httpRequest.uri());
                     HttpHeaders headers = fullHttpRequest.headers();
                     headers.add(httpRequest.headers());
                     headers.add(Dict.MULTIPART_FILE_LIST, Dict.MULTIPART_FILE_LIST);
@@ -88,7 +96,8 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
                 }
             } else {
                 if (!isMultipartFile) {
-                    ctx.fireChannelRead(httpContent);
+                    ByteBuf content = fullHttpRequest.content();
+                    content.writeBytes(httpContent.content());
                     return;
                 }
                 ByteBuf content = httpContent.content();
@@ -118,6 +127,8 @@ public class HttpMultipartFileHandler extends MessageToMessageDecoder<HttpObject
                 }
                 multipartFile.write(bytes);
             }
+        } else {
+            ctx.fireChannelRead(httpObject);
         }
 
     }

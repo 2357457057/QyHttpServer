@@ -1,6 +1,7 @@
 package top.yqingyu.httpserver.engine2;
 
 import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
@@ -88,6 +89,8 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         if (!qyResp.isAssemble()) {
             qyResp = Response.$404_NOT_FOUND.putHeaderDate(ZonedDateTime.now());
         }
-        ctx.writeAndFlush(new HttpEventEntity(qyReq, qyResp));
+        Channel channel = ctx.channel();
+        channel.write(new HttpEventEntity(qyReq, qyResp));
+        channel.flush();
     }
 }
