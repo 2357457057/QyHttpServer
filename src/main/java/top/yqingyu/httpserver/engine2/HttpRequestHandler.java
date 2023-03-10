@@ -1,11 +1,14 @@
 package top.yqingyu.httpserver.engine2;
 
+import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
 import io.netty.handler.codec.http.*;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.yqingyu.httpserver.common.LocationMapping;
 import top.yqingyu.httpserver.common.MultipartFile;
 import top.yqingyu.httpserver.common.Request;
@@ -18,6 +21,8 @@ import java.util.Map;
 import static top.yqingyu.httpserver.common.ServerConfig.SESSION_TIME_OUT;
 
 public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+    static Logger logger = LoggerFactory.getLogger(HttpResponseHandler.class);
+
     @Override
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
         HttpMethod method = msg.method();
@@ -92,5 +97,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         Channel channel = ctx.channel();
         channel.write(new HttpEventEntity(qyReq, qyResp));
         channel.flush();
+        logger.debug("reqs {}", JSON.toJSONString(qyReq));
+        logger.debug("resp {}", JSON.toJSONString(qyResp));
     }
 }

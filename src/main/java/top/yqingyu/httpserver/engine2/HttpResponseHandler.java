@@ -1,5 +1,6 @@
 package top.yqingyu.httpserver.engine2;
 
+import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
@@ -17,7 +18,6 @@ import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,13 +30,12 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 
-    static Logger logger = LoggerFactory.getLogger(HttpResponseHandler.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpEventEntity msg, ByteBuf out) throws Exception {
         Response response = msg.getResponse();
         Request msgRequest = msg.getRequest();
-//        if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
+        if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
             compress(msg);
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
             File file_body = response.getFile_body();
@@ -56,9 +55,7 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                     ctx.pipeline().remove("respEncode");
                 });
                 randomAccessFile.close();
-                logger.info("from chunk {}", msgRequest.getUrl());
             } else {
-                logger.info("from cache {}", msgRequest.getUrl());
                 String s = response.toString();
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
                 out.writeBytes(response.gainBodyBytes2());
@@ -87,14 +84,12 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                         byte[] bytes = FILE_BYTE_CACHE.get(url);
                         response.setCompressByteBody(bytes);
                         response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                        logger.info("from cache {}", request.getUrl());
                     } else {
                         File file = response.getFile_body();
                         if (file != null) {
                             long length = file.length();
                             if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
                                 byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
-                                logger.info("compress {}", request.getUrl());
                                 //开启压缩池
                                 if (CACHE_POOL_ON) {
                                     FILE_BYTE_CACHE.put(url, bytes);
