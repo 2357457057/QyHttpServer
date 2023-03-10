@@ -6,6 +6,7 @@ import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedFile;
+import io.netty.handler.stream.ChunkedNioFile;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,10 @@ import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static io.netty.handler.codec.http.HttpUtil.setContentLength;
@@ -40,21 +43,21 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
             File file_body = response.getFile_body();
             if (file_body != null && !response.isCompress()) {
-                RandomAccessFile randomAccessFile;
-                randomAccessFile = new RandomAccessFile(file_body, "r");  //只读模式
-                long fileLength = randomAccessFile.length();    //文件大小
+                FileChannel fileChannel = FileChannel.open(file_body.toPath(), StandardOpenOption.READ);
                 HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
                 addHeader(nettyResponse, response);
-                setContentLength(nettyResponse, fileLength);
-                nettyResponse.headers().set("Content-Type", ContentType.parseContentType(msgRequest.getUrl()));
+                setContentLength(nettyResponse, fileChannel.size());
+
                 ctx.pipeline().addFirst("respEncode", new HttpResponseEncoder());
                 ctx.write(nettyResponse);
-                ctx.write(new ChunkedFile(randomAccessFile, 0, fileLength, 1300), ctx.newProgressivePromise());
+                ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 2048), ctx.newProgressivePromise());
                 ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                 channelFuture.addListener(e -> {
                     ctx.pipeline().remove("respEncode");
+                    fileChannel.close();
+                    System.out.println(1);
                 });
-                randomAccessFile.close();
+                System.out.println(2);
             } else {
                 String s = response.toString();
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
