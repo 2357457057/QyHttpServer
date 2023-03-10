@@ -98,6 +98,5 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
         channel.write(new HttpEventEntity(qyReq, qyResp));
         channel.flush();
         logger.debug("reqs {}", JSON.toJSONString(qyReq));
-        logger.debug("resp {}", JSON.toJSONString(qyResp));
     }
 }
