@@ -14,6 +14,8 @@ import top.yqingyu.httpserver.common.MultipartFile;
 import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -27,7 +29,7 @@ public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequ
     protected void channelRead0(ChannelHandlerContext ctx, FullHttpRequest msg) throws Exception {
         HttpMethod method = msg.method();
         String name = method.name();
-        String uri = msg.uri();
+        String uri = URLDecoder.decode(msg.uri(), StandardCharsets.UTF_8);
         HttpHeaders headers = msg.headers();
         ByteBuf content = msg.content();
         Request qyReq = new Request();

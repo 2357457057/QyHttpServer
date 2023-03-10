@@ -60,6 +60,9 @@ public class HttpResponseHandler extends MessageToByteEncoder<HttpEventEntity> {
                 out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
                 out.writeBytes(response.gainBodyBytes2());
             }
+        } else if ("304|100".contains(response.getStatue_code())) {
+            String s = response.toString();
+            out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
         }
     }
 
