@@ -1,10 +1,10 @@
 server:
   engine: 2
-  port: 80
+  port: 443
   ssl: #only engine 2 can use this。
     enable: true
-    cert-path: C:\Users\Yangy\OneDrive\桌面\1_yqingyu.com_bundle.crt
-    key-path: C:\Users\Yangy\OneDrive\桌面\2_yqingyu.com.key
+    cert-path: classpath:localhost.crt
+    key-path: classpath:localhost.key
   handler-num: 4
   per-worker-num: 8
   worker-keep-live-time: 2H

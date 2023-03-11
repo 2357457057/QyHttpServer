@@ -1,11 +1,14 @@
 package top.yqingyu.httpserver.engine2;
 
+import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedNioFile;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
@@ -29,6 +32,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
     private static final ConcurrentDataMap<String, byte[]> FILE_BYTE_CACHE = new ConcurrentDataMap<>();
     private final AtomicLong CurrentFileCacheSize = new AtomicLong();
 
+    private static final Logger logger = LoggerFactory.getLogger(DoResponse.class);
 
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpEventEntity msg, ByteBuf out) throws Exception {
@@ -60,6 +64,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
             String s = response.toString();
             out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
         }
+        logger.debug("Response {}", JSON.toJSONString(response));
     }
 
     private void compress(HttpEventEntity eventEntity) throws IOException {

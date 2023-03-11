@@ -34,7 +34,7 @@ public class ServerInitial extends ChannelInitializer<SocketChannel> {
         pipeline.addLast("ExceptionHandle", new ExceptionHandle());
     }
 
-    private void SSL(SocketChannel ch) throws SSLException {
+    static void SSL(SocketChannel ch) throws SSLException {
         if (ServerConfig.SSL_ENABLE) {
             if (!sslIsInit) {
                 synchronized (SSL_LOCK) {

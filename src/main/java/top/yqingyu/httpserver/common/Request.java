@@ -1,6 +1,7 @@
 package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.annotation.JSONField;
 import top.yqingyu.common.qydata.DataMap;
 
 import java.io.Serializable;
@@ -31,11 +32,11 @@ public class Request implements HttpAction, Serializable {
     private final DataMap cookie = new DataMap();
 
     private Session session;
-
+    @JSONField(serialize=false)
     private MultipartFile multipartFile;
-
+    @JSONField(serialize=false)
     private byte[] body;
-
+    @JSONField(serialize=false)
     private boolean parseEnd = false;
 
     @Deprecated

@@ -1,6 +1,7 @@
 package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.annotation.JSONField;
 import org.apache.commons.lang3.StringUtils;
 import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
@@ -39,9 +40,11 @@ public class Response implements HttpAction, Serializable {
     private final ConcurrentDataSet<Cookie> cookie = new ConcurrentDataSet<>();
 
     private String string_body;
+    @JSONField(serialize = false)
     private File file_body;
-
+    @JSONField(serialize = false)
     private ByteBuffer compress_body;
+    @JSONField(serialize = false)
     private byte[] compressByteBody;
 
     public byte[] getCompressByteBody() {

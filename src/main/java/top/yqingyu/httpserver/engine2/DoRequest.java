@@ -23,7 +23,7 @@ import java.util.Map;
 import static top.yqingyu.httpserver.common.ServerConfig.SESSION_TIME_OUT;
 
 public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
-    static Logger logger = LoggerFactory.getLogger(DoResponse.class);
+    static Logger logger = LoggerFactory.getLogger(DoRequest.class);
 
     private static final ConcurrentDataMap<String, Session> SESSION_CONTAINER;
 
@@ -114,9 +114,9 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
         if (!qyResp.isAssemble()) {
             qyResp = Response.$404_NOT_FOUND.putHeaderDate(ZonedDateTime.now());
         }
+        logger.debug("Request {}", JSON.toJSONString(qyReq));
         Channel channel = ctx.channel();
         channel.write(new HttpEventEntity(qyReq, qyResp));
         channel.flush();
-        logger.debug("reqs {}", JSON.toJSONString(qyReq));
     }
 }

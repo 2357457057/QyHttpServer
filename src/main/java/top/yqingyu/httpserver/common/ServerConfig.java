@@ -2,9 +2,12 @@ package top.yqingyu.httpserver.common;
 
 import top.yqingyu.common.qydata.DataList;
 import top.yqingyu.common.qydata.DataMap;
+import top.yqingyu.common.utils.ResourceUtil;
 import top.yqingyu.common.utils.UnitUtil;
 import top.yqingyu.common.utils.YamlUtil;
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -22,6 +25,7 @@ public class ServerConfig {
     public static boolean SSL_ENABLE;
     public static String SSL_CERT_PATH;
     public static String SSL_KEY_PATH;
+    public static String HTTP_REDIRECT_HTTPS_URL = "https://localhost/root/file?name=yyj";
     public static int port;
     public static int handlerNumber;
     public static int perHandlerWorker;
@@ -86,8 +90,16 @@ public class ServerConfig {
 
                 DataMap ssl = server.getNotNUllData("ssl");
                 SSL_ENABLE = ssl.getBoolean("enable", false);
-                SSL_CERT_PATH = ssl.getString("cert-path", "/");
-                SSL_KEY_PATH = ssl.getString("key-path", "/");
+                if (SSL_ENABLE) {
+                    try {
+                        File sslCrt = ResourceUtil.getFile(ssl.getString("cert-path", "/"));
+                        File sslKey = ResourceUtil.getFile(ssl.getString("key-path", "/"));
+                        SSL_CERT_PATH = sslCrt.getAbsolutePath();
+                        SSL_KEY_PATH = sslKey.getAbsolutePath();
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
 
                 if (open_resource) {
                     DataList pathList = server.getDataList("local-resource-path");

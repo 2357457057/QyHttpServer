@@ -4,13 +4,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.DefaultFullHttpResponse;
-import io.netty.handler.codec.http.FullHttpResponse;
-import io.netty.handler.codec.http.HttpResponseStatus;
-import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.*;
+import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.httpserver.exception.HttpException;
+
+import static top.yqingyu.httpserver.common.ServerConfig.HTTP_REDIRECT_HTTPS_URL;
 
 /**
  * 具体的异常消息实现 ，可重写default方法
@@ -26,12 +26,17 @@ public interface ExceptionInterface {
     default void handle(ChannelHandlerContext ctx, Throwable cause) {
         String causeMessage = cause.getMessage();
         ChannelFuture channelFuture;
+        ctx.pipeline().addAfter("ExceptionHandle", "HttpResponseEncoder", new HttpResponseEncoder());
         if (cause instanceof HttpException.MethodNotSupposedException) {
             channelFuture = ctx.writeAndFlush(METHOD_NOT_ALLOWED.retainedDuplicate());
 
         } else if (cause instanceof HttpException.NotAMultipartFileInterfaceException) {
 
             channelFuture = ctx.writeAndFlush(NotAMultipartFileInterfaceResp.retainedDuplicate());
+        } else if (causeMessage.contains("NotSslRecordException")) {
+
+            logger.warn("非https 请求");
+            return;
         } else {
             channelFuture = ctx.writeAndFlush(INTERNAL_SERVER_ERROR.retainedDuplicate());
         }
@@ -40,6 +45,7 @@ public interface ExceptionInterface {
             if (!future.isSuccess()) {
                 ctx.close();
             }
+            ctx.pipeline().remove("HttpResponseEncoder");
             logger.debug("{}", causeMessage, future.cause());
         });
     }
