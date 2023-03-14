@@ -62,9 +62,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
                 ctx.writeAndFlush(httpResponse);
             }
         } else if ("304|100".contains(response.getStatue_code())) {
-            ByteBufAllocator alloc = out.alloc();
-            ByteBuf content = alloc.directBuffer(0);
-            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
+            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_MODIFIED);
             addHeader(httpResponse, response);
             ctx.writeAndFlush(httpResponse);
         }
