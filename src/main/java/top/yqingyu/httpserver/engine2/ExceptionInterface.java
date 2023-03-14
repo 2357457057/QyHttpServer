@@ -26,7 +26,6 @@ public interface ExceptionInterface {
     default void handle(ChannelHandlerContext ctx, Throwable cause) {
         String causeMessage = cause.getMessage();
         ChannelFuture channelFuture;
-        ctx.pipeline().addAfter("ExceptionHandle", "HttpResponseEncoder", new HttpResponseEncoder());
         if (cause instanceof HttpException.MethodNotSupposedException) {
             channelFuture = ctx.writeAndFlush(METHOD_NOT_ALLOWED.retainedDuplicate());
 
@@ -45,7 +44,6 @@ public interface ExceptionInterface {
             if (!future.isSuccess()) {
                 ctx.close();
             }
-            ctx.pipeline().remove("HttpResponseEncoder");
             logger.debug("{}", causeMessage, future.cause());
         });
     }

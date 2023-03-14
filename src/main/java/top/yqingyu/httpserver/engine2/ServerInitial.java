@@ -26,7 +26,7 @@ public class ServerInitial extends ChannelInitializer<SocketChannel> {
         ChannelPipeline pipeline = ch.pipeline();
 //        pipeline.addLast("log", new LoggingHandler());
         SSL(ch);
-        pipeline.addLast("HttpRequestDecoder", new HttpRequestDecoder());
+        pipeline.addLast("HttpServerCodec", new HttpServerCodec());
         pipeline.addLast("DoRequestPre", new DoRequestPre());
         pipeline.addLast("ChunkedWriteHandler", new ChunkedWriteHandler());
         pipeline.addLast("DoResponse", new DoResponse());

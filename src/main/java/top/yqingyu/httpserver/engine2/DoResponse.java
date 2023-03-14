@@ -2,6 +2,7 @@ package top.yqingyu.httpserver.engine2;
 
 import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufAllocator;
 import io.netty.channel.*;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
@@ -46,23 +47,26 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
                 HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
                 addHeader(nettyResponse, response);
                 setContentLength(nettyResponse, fileChannel.size());
-
-                ctx.pipeline().addAfter("DoResponse", "HttpResponseEncoder", new HttpResponseEncoder());
                 ctx.write(nettyResponse);
                 ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
                 ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
                 channelFuture.addListener(e -> {
-                    ctx.pipeline().remove("HttpResponseEncoder");
                     fileChannel.close();
                 });
             } else {
-                String s = response.toString();
-                out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
-                out.writeBytes(response.gainBodyBytes2());
+                ByteBufAllocator alloc = out.alloc();
+                ByteBuf content = alloc.directBuffer(0);
+                DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
+                addHeader(httpResponse, response);
+                content.writeBytes(response.gainBodyBytes2());
+                ctx.writeAndFlush(httpResponse);
             }
         } else if ("304|100".contains(response.getStatue_code())) {
-            String s = response.toString();
-            out.writeBytes(s.getBytes(StandardCharsets.UTF_8));
+            ByteBufAllocator alloc = out.alloc();
+            ByteBuf content = alloc.directBuffer(0);
+            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
+            addHeader(httpResponse, response);
+            ctx.writeAndFlush(httpResponse);
         }
         logger.debug("Response {}", JSON.toJSONString(response));
     }
@@ -112,11 +116,12 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
 
     private static void addHeader(HttpResponse response, Response orin) {
         DataMap header = orin.getHeader();
+        HttpHeaders headers = response.headers();
         ConcurrentDataSet<top.yqingyu.httpserver.common.Cookie> cookies = orin.getCookies();
         cookies.forEach((e) -> {
-            response.headers().add("set-cookie", e.toCookieValStr());
+            headers.add("set-cookie", e.toCookieValStr());
         });
-        header.forEach((k, v) -> response.headers().add(k, v));
+        header.forEach(headers::add);
     }
 
 }

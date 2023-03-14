@@ -8,6 +8,7 @@ import top.yqingyu.httpserver.common.*;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.LocalDateTimeUtil;
 
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -31,7 +32,7 @@ public class DemoController {
         session.set("name", "yyj");
         session.set("age", "101");
 
-        Cookie cookie = new Cookie("test", LocalDateTimeUtil.HTTP_FORMATTER.format(ZonedDateTime.now()));
+        Cookie cookie = new Cookie("test", LocalDateTimeUtil.format(LocalDateTimeUtil.FULL, LocalDateTime.now()));
         resp.addCookie(cookie);
 
         cookie.setMaxAge(60 * 60);
