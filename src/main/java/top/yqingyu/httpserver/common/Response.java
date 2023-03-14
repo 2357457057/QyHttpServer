@@ -47,6 +47,10 @@ public class Response implements HttpAction, Serializable {
     @JSONField(serialize = false)
     private byte[] compressByteBody;
 
+    public Response() {
+        this.putHeaderServer();
+    }
+
     public byte[] getCompressByteBody() {
         return compressByteBody;
     }
@@ -226,7 +230,6 @@ public class Response implements HttpAction, Serializable {
 
     @Override
     public String toString() {
-        this.putHeaderServer();
         StringBuilder sb = new StringBuilder();
         sb.append(httpVersion.getV()).append(" ").append(statue_code).append("\r\n");
 
