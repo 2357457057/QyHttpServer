@@ -2,7 +2,7 @@ server:
   engine: 2
   port: 443
   ssl: #only engine 2 can use this。
-    enable: true
+    enable: false
     cert-path: classpath:localhost.crt
     key-path: classpath:localhost.key
   handler-num: 4
@@ -11,7 +11,7 @@ server:
   open-resource: true
   open-controller: true
   connect-time-max: 15S
-  local-resource-path: [ H:/ ]
+  local-resource-path: [ I:\OneDrive\笔记\web\ ]
   resource-reloading-time: 60S
   controller-package: [ top.yqingyu.httpserver.web.controller ]
 
