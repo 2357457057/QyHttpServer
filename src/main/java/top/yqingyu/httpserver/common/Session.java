@@ -1,7 +1,7 @@
 package top.yqingyu.httpserver.common;
 
-import cn.hutool.core.lang.UUID;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
+import top.yqingyu.common.utils.UUIDUtil;
 
 import java.io.Serializable;
 import java.time.ZonedDateTime;
@@ -27,7 +27,7 @@ public class Session implements Serializable {
     private boolean newInstance;
 
     public Session() {
-        sessionVersionID = UUID.randomUUID().toString();
+        sessionVersionID = UUIDUtil.randomUUID().toString2();
         zoneTime = ZonedDateTime.now();
         sessionData = new ConcurrentDataMap<>();
         newInstance = true;

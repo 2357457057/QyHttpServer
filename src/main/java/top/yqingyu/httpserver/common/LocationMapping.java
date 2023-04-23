@@ -1,6 +1,5 @@
 package top.yqingyu.httpserver.common;
 
-import cn.hutool.core.lang.UUID;
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

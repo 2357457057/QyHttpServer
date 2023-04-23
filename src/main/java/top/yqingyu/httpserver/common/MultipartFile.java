@@ -1,10 +1,9 @@
 package top.yqingyu.httpserver.common;
 
-import cn.hutool.core.lang.UUID;
+import top.yqingyu.common.utils.UUIDUtil;
 
 import java.io.*;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -30,7 +29,7 @@ public class MultipartFile implements Serializable {
 
         String[] split = fileName.split("[.]");
 
-        String originFileName = UUID.randomUUID().toString();
+        String originFileName = UUIDUtil.randomUUID().toString2();
         if (split.length >= 2)
             originFileName = originFileName + "." + split[split.length - 1];
 
