@@ -10,7 +10,7 @@ import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.ContentType;
-import top.yqingyu.httpserver.common.LocationMapping;
+import top.yqingyu.httpserver.common.LocationDispatcher;
 import top.yqingyu.httpserver.common.MultipartFile;
 import top.yqingyu.httpserver.exception.HttpException;
 
@@ -54,7 +54,7 @@ public class DoRequestPre extends MessageToMessageDecoder<HttpObject> {
             String s = headers.get(HttpHeaderNames.CONTENT_TYPE);
             ContentType contentType = ContentType.parse(s);
             if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(contentType)) {
-                if (httpMessage instanceof DefaultHttpRequest httpRequest && !LocationMapping.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(httpRequest.uri().split("[?]")[0])) {
+                if (httpMessage instanceof DefaultHttpRequest httpRequest && !LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(httpRequest.uri().split("[?]")[0])) {
                     throw new HttpException.NotAMultipartFileInterfaceException("非可上传接口");
                 }
                 isMultipartFile = true;

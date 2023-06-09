@@ -4,7 +4,7 @@ import top.yqingyu.common.response.R;
 import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.common.HttpMethod;
-import top.yqingyu.httpserver.common.LocationMapping;
+import top.yqingyu.httpserver.common.LocationDispatcher;
 import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.exception.HttpException;
 
@@ -39,7 +39,7 @@ public class Resource {
         HashMap<String, String> file = new HashMap<>();
 
         String finalPath = path;
-        LocationMapping.FILE_RESOURCE_MAPPING.forEach((k, v) -> {
+        LocationDispatcher.FILE_RESOURCE_MAPPING.forEach((k, v) -> {
             if (k.indexOf("/") != 0) {
                 k = "/" + k;
             }

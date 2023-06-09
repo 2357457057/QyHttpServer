@@ -125,7 +125,7 @@ class DoResponse implements Callable<Object> {
         Response response = resp.get();
         //优先文件资源
         if (!response.isAssemble()) {
-            LocationMapping.fileResourceMapping(request, response);
+            LocationDispatcher.fileResourceMapping(request, response);
         }
 
         //接口
@@ -142,7 +142,7 @@ class DoResponse implements Callable<Object> {
             request.setSession(session);
 
             //接口资源
-            LocationMapping.beanResourceMapping(request, response,false);
+            LocationDispatcher.beanResourceMapping(request, response,false);
 
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {

@@ -105,10 +105,10 @@ public class ServerConfig {
                     DataList pathList = server.getDataList("local-resource-path");
                     if (pathList == null || pathList.size() == 0) {
                         String path = System.getProperty("user.dir");
-                        LocationMapping.loadingFileResource(path);
+                        LocationDispatcher.loadingFileResource(path);
                     } else {
                         for (int i = 0; i < pathList.size(); i++) {
-                            LocationMapping.loadingFileResource(pathList.getString(i));
+                            LocationDispatcher.loadingFileResource(pathList.getString(i));
                         }
                     }
 
@@ -117,10 +117,10 @@ public class ServerConfig {
                 if (open_controller) {
                     DataList scan_packages = server.getDataList("controller-package");
                     if (scan_packages == null || scan_packages.size() == 0) {
-                        LocationMapping.loadingBeanResource("top.yqingyu.httpserver.web.controller");
+                        LocationDispatcher.loadingBeanResource("top.yqingyu.httpserver.web.controller");
                     } else {
                         for (int i = 0; i < scan_packages.size(); i++) {
-                            LocationMapping.loadingBeanResource(scan_packages.getString(i));
+                            LocationDispatcher.loadingBeanResource(scan_packages.getString(i));
                         }
                     }
                 }

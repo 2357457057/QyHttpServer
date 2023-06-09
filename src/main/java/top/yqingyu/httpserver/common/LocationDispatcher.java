@@ -9,6 +9,7 @@ import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ClazzUtil;
 import top.yqingyu.common.utils.ResourceUtil;
 import top.yqingyu.common.utils.StringUtil;
+import top.yqingyu.common.utils.UUIDUtil;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.exception.HttpException;
 
@@ -27,13 +28,13 @@ import static top.yqingyu.httpserver.common.ServerConfig.resourceReloadingTime;
 /**
  * @author YYJ
  * @version 1.0.0
- * @ClassName top.yqingyu.httpserver.entity.LocationMapping
+ * @ClassName top.yqingyu.httpserver.entity.LocationDispatcher
  * @description
  * @createTime 2022年09月10日 22:56:00
  */
-public class LocationMapping {
+public class LocationDispatcher {
 
-    private static final Logger log = LoggerFactory.getLogger(LocationMapping.class);
+    private static final Logger log = LoggerFactory.getLogger(LocationDispatcher.class);
 
     public static ConcurrentHashMap<String, String> FILE_RESOURCE_MAPPING = new ConcurrentHashMap<>();
     public static List<String> RootPathArray = new ArrayList<>();
@@ -171,7 +172,7 @@ public class LocationMapping {
             } else if (StringUtils.isNotBlank(eTagValue)) {
                 response.putHeader("ETag", eTagValue);
             } else {
-                eTag = "W/\"" + UUID.randomUUID() + "\"";
+                eTag = "W/\"" + UUIDUtil.randomUUID().toString2() + "\"";
                 response.putHeader("ETag", eTag);
                 FILE_CACHING.put(url, eTag);
             }

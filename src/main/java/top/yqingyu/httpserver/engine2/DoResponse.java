@@ -78,37 +78,42 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         if (requestCtTyp != null)
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
-        if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            if (request.canCompress()) {
-                String strBody = response.getStrBody();
-                if (StringUtils.isNotBlank(strBody)) {
-                    byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
-                    response.setCompressByteBody(bytes);
-                    response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                } else {
-                    if (FILE_BYTE_CACHE.containsKey(url)) {
-                        byte[] bytes = FILE_BYTE_CACHE.get(url);
-                        response.setCompressByteBody(bytes);
-                        response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                    } else {
-                        File file = response.getFile_body();
-                        if (file != null) {
-                            long length = file.length();
-                            if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
-                                byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
-                                //开启压缩池
-                                if (CACHE_POOL_ON) {
-                                    FILE_BYTE_CACHE.put(url, bytes);
-                                    CurrentFileCacheSize.addAndGet(bytes.length);
-                                }
+        if ("304|100".contains(response.getStatue_code()))
+            return;
 
-                                response.setCompressByteBody(bytes);
-                                response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                            }
-                        }
-                    }
-                }
+        if (response.getStrBody() == null && response.gainFileBody() == null)
+            return;
+
+        if (!request.canCompress())
+            return;
+
+        String strBody = response.getStrBody();
+        if (StringUtils.isNotBlank(strBody)) {
+            byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
+            response.setCompressByteBody(bytes);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
+            return;
+        }
+        if (FILE_BYTE_CACHE.containsKey(url)) {
+            byte[] bytes = FILE_BYTE_CACHE.get(url);
+            response.setCompressByteBody(bytes);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
+            return;
+        }
+        File file = response.getFile_body();
+        if (file == null) {
+            return;
+        }
+        long length = file.length();
+        if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
+            byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
+            //开启压缩池
+            if (CACHE_POOL_ON) {
+                FILE_BYTE_CACHE.put(url, bytes);
+                CurrentFileCacheSize.addAndGet(bytes.length);
             }
+            response.setCompressByteBody(bytes);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
         }
     }
 

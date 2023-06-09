@@ -183,7 +183,7 @@ class DoRequest implements Runnable {
 
                             //文件上传逻辑
                             if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
-                                if (!LocationMapping.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
+                                if (!LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
                                     netChannel.shutdownInput();
                                     return $401_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
                                 }

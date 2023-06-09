@@ -86,7 +86,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         Response qyResp = new Response();
         qyResp.setHttpVersion(top.yqingyu.httpserver.common.HttpVersion.V_1_1);
-        LocationMapping.fileResourceMapping(qyReq, qyResp);
+        LocationDispatcher.fileResourceMapping(qyReq, qyResp);
 
         if (!qyResp.isAssemble()) {
             //session相关逻辑
@@ -101,7 +101,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
             qyReq.setSession(session);
 
             //接口资源
-            LocationMapping.beanResourceMapping(qyReq, qyResp, true);
+            LocationDispatcher.beanResourceMapping(qyReq, qyResp, true);
 
             if (qyResp.isAssemble() && qyReq.getSession().isNewInstance()) {
                 session.setNewInstance(false);
