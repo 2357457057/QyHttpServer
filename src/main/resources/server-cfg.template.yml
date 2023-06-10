@@ -1,6 +1,6 @@
 server:
-  engine: 2
-  port: 443
+  engine: 0
+  port: 4800
   ssl: #only engine 2 can use this。
     enable: false
     cert-path: classpath:localhost.crt

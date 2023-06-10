@@ -25,7 +25,6 @@ public class ServerConfig {
     public static boolean SSL_ENABLE;
     public static String SSL_CERT_PATH;
     public static String SSL_KEY_PATH;
-    public static String HTTP_REDIRECT_HTTPS_URL = "https://localhost/root/file?name=yyj";
     public static int port;
     public static int handlerNumber;
     public static int perHandlerWorker;

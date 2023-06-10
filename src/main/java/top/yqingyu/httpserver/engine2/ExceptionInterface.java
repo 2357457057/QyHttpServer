@@ -5,12 +5,10 @@ import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.http.*;
-import io.netty.handler.ssl.SslHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.httpserver.exception.HttpException;
 
-import static top.yqingyu.httpserver.common.ServerConfig.HTTP_REDIRECT_HTTPS_URL;
 
 /**
  * 具体的异常消息实现 ，可重写default方法
