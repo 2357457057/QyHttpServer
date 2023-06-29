@@ -139,7 +139,7 @@ class DoRequest implements Runnable {
 
                     ArrayList<byte[]> bytes = splitByTarget(all, RN_RN);
                     //当且仅当找到了/r/n/r/n
-                    if (bytes.size() != 0) {
+                    if (!bytes.isEmpty()) {
                         // 头部已解析
                         flag = true;
                         assembleHeader(request, bytes.get(0), netChannel);
