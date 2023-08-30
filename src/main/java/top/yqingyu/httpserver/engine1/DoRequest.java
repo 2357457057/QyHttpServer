@@ -6,15 +6,13 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.server$aio.Session;
+import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.utils.ArrayUtil;
-import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -217,13 +215,7 @@ class DoRequest implements Callable<HttpEventEntity> {
 
         if (i != -1) {
             String substring = request.getUrl().substring(i + 1);
-            String[] split = substring.split("&");
-            for (int j = 0; j < split.length; j++) {
-
-                String[] urlParamKV = split[j].split("=");
-                if (urlParamKV.length == 2) request.putUrlParam(urlParamKV[0], urlParamKV[1]);
-                else request.putUrlParam("NoKey_" + j, split[j]);
-            }
+            HttpUtil.getUrlParam(request, substring);
         }
         for (byte[] bytes : info$header) {
             ArrayList<byte[]> headerName_value = splitByTarget(bytes, COLON_SPACE);
@@ -247,29 +239,7 @@ class DoRequest implements Callable<HttpEventEntity> {
         Stack<MultipartFile> multipartFileStack = new Stack<>();
         while (currentContentLength < contentLength) {
             //Multipart
-            ArrayList<byte[]> boundarys = splitByTarget(temp, boundaryBytes);
-            if (boundarys.size() > 0 || multipartFileStack.size() > 0) {
-                for (int i = 0; i < boundarys.size(); i++) {
-                    if (i == 0 && multipartFileStack.size() > 0) {
-                        multipartFileStack.peek().write(boundarys.get(0));
-                    } else {
-                        ArrayList<byte[]> bytes = splitByTarget(boundarys.get(i), RN_RN);
-                        if (bytes.size() > 0) {
-                            byte[] multiHeaderBytes = bytes.get(0);
-                            ArrayList<byte[]> multiHeader = splitByTarget(multiHeaderBytes, RN);
-                            if (multiHeader.size() == 2) {
-                                String Content_Disposition = new String(multiHeader.get(0), StandardCharsets.UTF_8);
-                                String[] Content_Dispositions = Content_Disposition.split("filename=\"");
-                                String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
-                                MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
-                                multipartFileStack.push(multipartFile);
-                                if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
-                            }
-
-                        }
-                    }
-                }
-            }
+            HttpUtil.parseMultipartFile(boundaryBytes, temp, multipartFileStack);
             temp = session.readBytes2((int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }

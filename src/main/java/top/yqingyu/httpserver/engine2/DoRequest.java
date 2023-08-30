@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.httpserver.common.*;
+import top.yqingyu.httpserver.common.HttpUtil;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
@@ -54,8 +55,8 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
         Request qyReq = new Request();
 
         while (content.readableBytes() > 0) {
-            int readabled = content.readableBytes();
-            byte[] bytes = new byte[readabled];
+            int readable = content.readableBytes();
+            byte[] bytes = new byte[readable];
             content.readBytes(bytes);
             qyReq.setBody(bytes);
         }
@@ -71,13 +72,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
         int i = StringUtils.indexOf(uri, '?');
         if (i != -1) {
             String substring = uri.substring(i + 1);
-            String[] split = substring.split("&");
-            for (int j = 0; j < split.length; j++) {
-
-                String[] urlParamKV = split[j].split("=");
-                if (urlParamKV.length == 2) qyReq.putUrlParam(urlParamKV[0], urlParamKV[1]);
-                else qyReq.putUrlParam("NoKey_" + j, split[j]);
-            }
+            HttpUtil.getUrlParam(qyReq, substring);
         }
         List<Map.Entry<String, String>> entries = headers.entries();
         for (Map.Entry<String, String> entry : entries) {
@@ -121,4 +116,6 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
         channel.write(new HttpEventEntity(qyReq, qyResp));
         channel.flush();
     }
+
+
 }

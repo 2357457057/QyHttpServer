@@ -1,0 +1,81 @@
+package top.yqingyu.httpserver.common;
+
+import top.yqingyu.common.bean.NetChannel;
+import top.yqingyu.common.server$aio.Session;
+import top.yqingyu.common.server$nio.core.RebuildSelectorException;
+import top.yqingyu.common.utils.ArrayUtil;
+import top.yqingyu.common.utils.StringUtil;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Stack;
+
+
+public class HttpUtil {
+    public static void getUrlParam(Request qyReq, String substring) {
+        String[] split = substring.split("&");
+        for (int j = 0; j < split.length; j++) {
+
+            String[] urlParamKV = split[j].split("=");
+            if (urlParamKV.length == 2) qyReq.putUrlParam(urlParamKV[0], urlParamKV[1]);
+            else qyReq.putUrlParam("NoKey_" + j, split[j]);
+        }
+    }
+
+    public static void parseMultipartFile(byte[] boundaryBytes, byte[] temp, Stack<MultipartFile> multipartFileStack) throws IOException {
+        ArrayList<byte[]> boundary = ArrayUtil.splitByTarget(temp, boundaryBytes);
+        if (!boundary.isEmpty() || !multipartFileStack.isEmpty()) {
+            for (int i = 0; i < boundary.size(); i++) {
+                if (i == 0 && !multipartFileStack.isEmpty()) {
+                    multipartFileStack.peek().write(boundary.get(0));
+                } else {
+                    ArrayList<byte[]> bytes = ArrayUtil.splitByTarget(boundary.get(i), ArrayUtil.RN_RN);
+                    if (!bytes.isEmpty()) {
+                        byte[] multiHeaderBytes = bytes.get(0);
+                        ArrayList<byte[]> multiHeader = ArrayUtil.splitByTarget(multiHeaderBytes, ArrayUtil.RN);
+                        if (multiHeader.size() == 2) {
+                            String Content_Disposition = new String(multiHeader.get(0), StandardCharsets.UTF_8);
+                            String[] Content_Dispositions = Content_Disposition.split("filename=\"");
+                            String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
+                            MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
+                            multipartFileStack.push(multipartFile);
+                            if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    public static void assembleHeader(Request request, byte[] header, Object channel) throws Exception {
+        //只剩body
+        ArrayList<byte[]> info$header = ArrayUtil.splitByTarget(header, ArrayUtil.RN);
+        ArrayList<byte[]> info = ArrayUtil.splitByTarget(info$header.remove(0), ArrayUtil.SPACE);
+
+        if (info.size() < 3) {
+            if (channel instanceof NetChannel netChannel) {
+                netChannel.close();
+            } else if (channel instanceof Session session) {
+                session.close();
+            }
+            throw new RebuildSelectorException("消息解析异常");
+        }
+
+        request.setMethod(info.get(0));
+        request.setUrl(info.get(1));
+        request.setHttpVersion(info.get(2));
+
+        int i = StringUtil.indexOf(request.getUrl(), '?');
+
+        if (i != -1) {
+            String substring = request.getUrl().substring(i + 1);
+            HttpUtil.getUrlParam(request, substring);
+        }
+        for (byte[] bytes : info$header) {
+            ArrayList<byte[]> headerName_value = ArrayUtil.splitByTarget(bytes, ArrayUtil.COLON_SPACE);
+            request.putHeader(headerName_value.get(0), headerName_value.size() == 2 ? headerName_value.get(1) : null);
+        }
+    }
+}

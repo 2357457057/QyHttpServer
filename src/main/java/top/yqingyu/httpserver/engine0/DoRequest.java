@@ -112,7 +112,7 @@ class DoRequest implements Runnable {
             if (currentStep == 0 && temp.length < DEFAULT_BUF_LENGTH && currentLength != 0) {
                 ArrayList<byte[]> Info$header$body = ArrayUtil.splitByTarget(temp, RN_RN);
 
-                assembleHeader(request, Info$header$body.remove(0), netChannel);
+                HttpUtil.assembleHeader(request, Info$header$body.remove(0), netChannel);
 
                 byte[] body = EMPTY_BYTE_ARRAY;
                 for (byte[] bytes : Info$header$body) {
@@ -142,7 +142,7 @@ class DoRequest implements Runnable {
                     if (!bytes.isEmpty()) {
                         // 头部已解析
                         flag = true;
-                        assembleHeader(request, bytes.get(0), netChannel);
+                        HttpUtil.assembleHeader(request, bytes.get(0), netChannel);
                         // 当只收到消息头，且消息头有 Content-Length 且Content-Length在一定的范围内 此时需要
                         if (bytes.size() == 1 && StringUtils.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
                             Response response = $100_CONTINUE.putHeaderDate(ZonedDateTime.now());
@@ -211,36 +211,6 @@ class DoRequest implements Runnable {
         return request;
     }
 
-    static void assembleHeader(Request request, byte[] header, NetChannel netChannel) throws Exception {
-        //只剩body
-        ArrayList<byte[]> info$header = ArrayUtil.splitByTarget(header, RN);
-        ArrayList<byte[]> info = splitByTarget(info$header.remove(0), SPACE);
-
-        if (info.size() < 3) {
-            netChannel.close();
-            throw new RebuildSelectorException("消息解析异常");
-        }
-        request.setMethod(info.get(0));
-        request.setUrl(info.get(1));
-        request.setHttpVersion(info.get(2));
-
-        int i = StringUtils.indexOf(request.getUrl(), '?');
-
-        if (i != -1) {
-            String substring = request.getUrl().substring(i + 1);
-            String[] split = substring.split("&");
-            for (int j = 0; j < split.length; j++) {
-
-                String[] urlParamKV = split[j].split("=");
-                if (urlParamKV.length == 2) request.putUrlParam(urlParamKV[0], urlParamKV[1]);
-                else request.putUrlParam("NoKey_" + j, split[j]);
-            }
-        }
-        for (byte[] bytes : info$header) {
-            ArrayList<byte[]> headerName_value = splitByTarget(bytes, COLON_SPACE);
-            request.putHeader(headerName_value.get(0), headerName_value.size() == 2 ? headerName_value.get(1) : null);
-        }
-    }
 
 
     /**
@@ -258,35 +228,15 @@ class DoRequest implements Runnable {
         Stack<MultipartFile> multipartFileStack = new Stack<>();
         while (currentContentLength < contentLength) {
             //Multipart
-            ArrayList<byte[]> boundarys = splitByTarget(temp, boundaryBytes);
-            if (boundarys.size() > 0 || multipartFileStack.size() > 0) {
-                for (int i = 0; i < boundarys.size(); i++) {
-                    if (i == 0 && multipartFileStack.size() > 0) {
-                        multipartFileStack.peek().write(boundarys.get(0));
-                    } else {
-                        ArrayList<byte[]> bytes = splitByTarget(boundarys.get(i), RN_RN);
-                        if (bytes.size() > 0) {
-                            byte[] multiHeaderBytes = bytes.get(0);
-                            ArrayList<byte[]> multiHeader = splitByTarget(multiHeaderBytes, RN);
-                            if (multiHeader.size() == 2) {
-                                String Content_Disposition = new String(multiHeader.get(0), StandardCharsets.UTF_8);
-                                String[] Content_Dispositions = Content_Disposition.split("filename=\"");
-                                String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
-                                MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
-                                multipartFileStack.push(multipartFile);
-                                if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
-                            }
-
-                        }
-                    }
-                }
-            }
+           HttpUtil.parseMultipartFile(boundaryBytes, temp, multipartFileStack);
             temp = IoUtil.readBytes2(netChannel, (int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }
         request.setMultipartFile(multipartFileStack.pop().endWrite());
         request.setParseEnd();
     }
+
+
 
 
 }
