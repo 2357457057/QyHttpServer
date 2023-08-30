@@ -4,9 +4,13 @@ import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpVersion;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.exception.HttpException;
 
 
@@ -26,12 +30,9 @@ public interface ExceptionInterface {
         ChannelFuture channelFuture;
         if (cause instanceof HttpException.MethodNotSupposedException) {
             channelFuture = ctx.writeAndFlush(METHOD_NOT_ALLOWED.retainedDuplicate());
-
         } else if (cause instanceof HttpException.NotAMultipartFileInterfaceException) {
-
             channelFuture = ctx.writeAndFlush(NotAMultipartFileInterfaceResp.retainedDuplicate());
-        } else if (causeMessage.contains("NotSslRecordException")) {
-
+        } else if (StringUtil.isNotEmpty(causeMessage) && causeMessage.contains("NotSslRecordException")) {
             logger.warn("非https 请求");
             return;
         } else {
