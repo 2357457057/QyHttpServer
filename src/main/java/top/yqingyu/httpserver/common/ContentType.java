@@ -4,12 +4,11 @@ import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.common.utils.UnameUtil;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.*;
+import java.util.Locale;
 
 /**
  * @author YYJ
@@ -28,6 +27,7 @@ public class ContentType implements Serializable {
         this.adviceStatusCode = adviceStatusCode;
         return this;
     }
+
     private static final String CHARSET = "charset";
 
 
@@ -196,7 +196,8 @@ public class ContentType implements Serializable {
                 case "doc", "docx", "xlsx", "xls", "ppt", "pptx",
                         "exe", "apk", "msi", "rpm",
                         "zip", "rar", "7z", "gz",
-                        "mkv", "iso", "srt", "ass", "torrent",
+                        "mkv", "iso",
+                        "srt", "SRT", "ass", "ASS", "SUB", "sub", "torrent", "TORRENT",
                         "jar", "war", "class", "img" -> APPLICATION_OCTET_STREAM;
                 case "mp3" -> AUDIO_MP3;
                 case "avi" -> VIDEO_AVI;
