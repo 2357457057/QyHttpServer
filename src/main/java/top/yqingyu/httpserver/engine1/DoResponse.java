@@ -5,9 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
+import top.yqingyu.common.server$aio.Session;
 import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.httpserver.common.*;
-import top.yqingyu.common.server$aio.Session;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,6 +23,7 @@ import java.time.ZonedDateTime;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
@@ -139,14 +140,11 @@ class DoResponse implements Callable<Object> {
                 session = new top.yqingyu.httpserver.common.Session();
                 SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
-            request.setSession(session);
-
+            HttpUtil.setSession(request, session);
             //接口资源
-            LocationDispatcher.beanResourceMapping(request, response,false);
-
-
+            LocationDispatcher.beanResourceMapping(request, response, false);
             if (response.isAssemble() && request.getSession().isNewInstance()) {
-                session.setNewInstance(false);
+                HttpUtil.setInstanceFalse(session);
                 Cookie cookie = new Cookie(top.yqingyu.httpserver.common.Session.name, session.getSessionVersionID());
                 cookie.setMaxAge((int) SESSION_TIME_OUT);
                 response.addCookie(cookie);
@@ -180,7 +178,7 @@ class DoResponse implements Callable<Object> {
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            if (request.canCompress()) {
+            if (HttpUtil.canCompress(request)) {
                 String strBody = response.getStrBody();
                 if (StringUtils.isNotBlank(strBody)) {
                     byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);

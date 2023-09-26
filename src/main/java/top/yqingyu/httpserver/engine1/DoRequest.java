@@ -109,8 +109,8 @@ class DoRequest implements Callable<HttpEventEntity> {
                 for (byte[] bytes : Info$header$body) {
                     body = ArrayUtil.addAll(body, bytes);
                 }
-                request.setBody(body);
-                request.setParseEnd();
+                HttpUtil.setBody(request, body);
+                HttpUtil.setParseEnd(request);
                 break;
                 //当报文总长度超出 DEFAULT_BUF_LENGTH
             } else if (currentStep == 0 && currentLength == 0) {
@@ -140,7 +140,7 @@ class DoRequest implements Callable<HttpEventEntity> {
 
                 //get无body
                 if (HttpMethod.GET.equals(request.getMethod())) {
-                    request.setParseEnd();
+                    HttpUtil.setParseEnd(request);
                     return request;
                 }
 
@@ -162,7 +162,7 @@ class DoRequest implements Callable<HttpEventEntity> {
                             return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
                             //最后一位
                         } else if (efIdx == all.length) {
-                            request.setParseEnd();
+                            HttpUtil.setParseEnd(request);
                         } else {
                             int currentContentLength = all.length - efIdx;
                             String header = request.getHeader("Content-Type");
@@ -184,8 +184,8 @@ class DoRequest implements Callable<HttpEventEntity> {
                                     byte[] body = new byte[(int) contentLength];
                                     System.arraycopy(all, efIdx, body, 0, currentContentLength);
                                     System.arraycopy(temp, 0, body, currentContentLength, (int) ll);
-                                    request.setBody(body);
-                                    request.setParseEnd();
+                                    HttpUtil.setBody(request, body);
+                                    HttpUtil.setParseEnd(request);
                                 }
 
                             }
@@ -202,24 +202,21 @@ class DoRequest implements Callable<HttpEventEntity> {
         //只剩body
         ArrayList<byte[]> info$header = ArrayUtil.splitByTarget(header, RN);
         ArrayList<byte[]> info = splitByTarget(info$header.remove(0), SPACE);
-
         if (info.size() < 3) {
             session.close();
             throw new RebuildSelectorException("消息解析异常");
         }
-        request.setMethod(info.get(0));
-        request.setUrl(info.get(1));
-        request.setHttpVersion(info.get(2));
-
+        HttpUtil.setMethod(request, info.get(0));
+        HttpUtil.setUrl(request, info.get(1));
+        HttpUtil.setHttpVersion(request, info.get(2));
         int i = StringUtils.indexOf(request.getUrl(), '?');
-
         if (i != -1) {
             String substring = request.getUrl().substring(i + 1);
             HttpUtil.getUrlParam(request, substring);
         }
         for (byte[] bytes : info$header) {
             ArrayList<byte[]> headerName_value = splitByTarget(bytes, COLON_SPACE);
-            request.putHeader(headerName_value.get(0), headerName_value.size() == 2 ? headerName_value.get(1) : null);
+            HttpUtil.putHeader(request, headerName_value.get(0), headerName_value.size() == 2 ? headerName_value.get(1) : null);
         }
     }
 
@@ -243,12 +240,11 @@ class DoRequest implements Callable<HttpEventEntity> {
             temp = session.readBytes2((int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }
-        request.setMultipartFile(multipartFileStack.pop().endWrite());
-        request.setParseEnd();
+        MultipartFile pop = multipartFileStack.pop();
+        HttpUtil.endWrite(pop);
+        HttpUtil.setMultipartFile(request, pop);
+        HttpUtil.setParseEnd(request);
     }
 
-    static void assembleMultipartFileHeader() {
-
-    }
 
 }

@@ -5,14 +5,15 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.SimpleChannelInboundHandler;
-import io.netty.handler.codec.http.*;
+import io.netty.handler.codec.http.DefaultFullHttpRequest;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
 import top.yqingyu.httpserver.common.*;
-import top.yqingyu.httpserver.common.HttpUtil;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
@@ -35,8 +36,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
             Field sessionContainer = Session.class.getDeclaredField("SESSION_CONTAINER");
             sessionContainer.setAccessible(true);
 
-            @SuppressWarnings("unchecked")
-            ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
+            @SuppressWarnings("unchecked") ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
 
             temp = temp2;
         } catch (Exception ignore) {
@@ -58,12 +58,12 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
             int readable = content.readableBytes();
             byte[] bytes = new byte[readable];
             content.readBytes(bytes);
-            qyReq.setBody(bytes);
+            HttpUtil.setBody(qyReq, bytes);
         }
 
         if (Dict.MULTIPART_FILE_LIST.equals(headers.get(Dict.MULTIPART_FILE_LIST))) {
             List<MultipartFile> multipartFileList = DoRequestPre.getMultipartFileList((DefaultFullHttpRequest) msg);
-            qyReq.setMultipartFile(multipartFileList.get(0));
+            HttpUtil.setMultipartFile(qyReq, multipartFileList.get(0));
         }
 
         qyReq.setUrl(uri);
@@ -87,19 +87,18 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
             //session相关逻辑
             Session session;
             String sessionID = qyReq.getCookie(Session.name);
-            if (SESSION_CONTAINER.containsKey(sessionID))
-                session = SESSION_CONTAINER.get(sessionID);
+            if (SESSION_CONTAINER.containsKey(sessionID)) session = SESSION_CONTAINER.get(sessionID);
             else {
                 session = new Session();
                 SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
-            qyReq.setSession(session);
+            HttpUtil.setSession(qyReq, session);
 
             //接口资源
             LocationDispatcher.beanResourceMapping(qyReq, qyResp, true);
 
             if (qyResp.isAssemble() && qyReq.getSession().isNewInstance()) {
-                session.setNewInstance(false);
+                HttpUtil.setInstanceFalse(session);
                 top.yqingyu.httpserver.common.Cookie cookie = new top.yqingyu.httpserver.common.Cookie(top.yqingyu.httpserver.common.Session.name, session.getSessionVersionID());
                 cookie.setMaxAge((int) SESSION_TIME_OUT);
                 qyResp.addCookie(cookie);

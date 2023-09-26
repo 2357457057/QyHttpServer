@@ -48,7 +48,6 @@ public class HttpUtil {
         }
     }
 
-
     public static void assembleHeader(Request request, byte[] header, Object channel) throws Exception {
         //只剩body
         ArrayList<byte[]> info$header = ArrayUtil.splitByTarget(header, ArrayUtil.RN);
@@ -78,4 +77,54 @@ public class HttpUtil {
             request.putHeader(headerName_value.get(0), headerName_value.size() == 2 ? headerName_value.get(1) : null);
         }
     }
+
+    public static void setInstanceFalse(top.yqingyu.httpserver.common.Session session) {
+        session.setNewInstance();
+    }
+
+    public static void write(MultipartFile file, byte[] bytes) throws IOException {
+        file.write(bytes);
+    }
+
+    public static void endWrite(MultipartFile file) throws IOException {
+        file.endWrite();
+    }
+
+    public static void setParseEnd(Request request) {
+        request.setParseEnd();
+    }
+
+    public static void setMethod(Request request, byte[] method) {
+        request.setMethod(method);
+    }
+
+    public static void setHttpVersion(Request request, byte[] httpVersion) {
+        request.setHttpVersion(httpVersion);
+    }
+
+    public static void setUrl(Request request, byte[] url) {
+        request.setUrl(url);
+    }
+
+    public static void setBody(Request request, byte[] body) {
+        request.setBody(body);
+    }
+
+    public static void setSession(Request request, top.yqingyu.httpserver.common.Session session) {
+        request.setSession(session);
+    }
+
+    public static void putHeader(Request request, byte[] key, byte[] obj) {
+       request.putHeader(key, obj);
+    }
+
+
+    public static boolean canCompress(Request request) {
+        return request.canCompress();
+    }
+
+    public static void setMultipartFile(Request request, MultipartFile multipartFile) {
+        request.setMultipartFile(multipartFile);
+    }
+
 }

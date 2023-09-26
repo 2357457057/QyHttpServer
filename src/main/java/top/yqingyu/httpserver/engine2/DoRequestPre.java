@@ -10,6 +10,7 @@ import top.yqingyu.common.qydata.ConcurrentQyMap;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.ContentType;
+import top.yqingyu.httpserver.common.HttpUtil;
 import top.yqingyu.httpserver.common.LocationDispatcher;
 import top.yqingyu.httpserver.common.MultipartFile;
 import top.yqingyu.httpserver.exception.HttpException;
@@ -82,8 +83,8 @@ public class DoRequestPre extends MessageToMessageDecoder<HttpObject> {
                 byte[] bytes = new byte[readableBytes];
                 content.readBytes(bytes);
                 ArrayList<byte[]> bytes1 = splitByTarget(bytes, boundaryEnd);
-                multipartFile.write(bytes1.get(0));
-                multipartFile.endWrite();
+                HttpUtil.write(multipartFile,bytes1.get(0));
+                HttpUtil.endWrite(multipartFile);
                 if (httpMessage instanceof DefaultHttpRequest httpRequest) {
                     fullHttpRequest = new DefaultFullHttpRequest(httpRequest.protocolVersion(), httpRequest.method(), httpRequest.uri());
                     HttpHeaders headers = fullHttpRequest.headers();
@@ -106,8 +107,8 @@ public class DoRequestPre extends MessageToMessageDecoder<HttpObject> {
                     ArrayList<byte[]> data1 = ArrayUtil.splitByTarget(bytes, boundary);
                     if (boundaryTimes.get() != 0) {
                         data1 = ArrayUtil.splitByTarget(bytes, boundaryEnd);
-                        multipartFile.write(data1.get(0));
-                        multipartFile.endWrite();
+                        HttpUtil.write(multipartFile,data1.get(0));
+                        HttpUtil.endWrite(multipartFile);
                     }
                     ArrayList<byte[]> data2 = ArrayUtil.splitByTarget(data1.get(1), ArrayUtil.RN_RN);
                     byte[] header = data2.get(0);
@@ -117,13 +118,13 @@ public class DoRequestPre extends MessageToMessageDecoder<HttpObject> {
                         String[] Content_Dispositions = Content_Disposition.split("filename=\"");
                         String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
                         multipartFile = new MultipartFile(fileName, "/tmp");
-                        multipartFile.write(data2.get(1));
+                        HttpUtil.write(multipartFile,data2.get(1));
                         multipartFileList.add(multipartFile);
                     }
                     boundaryTimes.getAndIncrement();
                     return;
                 }
-                multipartFile.write(bytes);
+                HttpUtil.write(multipartFile,bytes);
             }
         } else {
             ctx.fireChannelRead(httpObject);

@@ -9,12 +9,10 @@ import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.common.utils.IoUtil;
-import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
@@ -118,8 +116,9 @@ class DoRequest implements Runnable {
                 for (byte[] bytes : Info$header$body) {
                     body = ArrayUtil.addAll(body, bytes);
                 }
-                request.setBody(body);
-                request.setParseEnd();
+
+                HttpUtil.setBody(request, body);
+                HttpUtil.setParseEnd(request);
                 break;
                 //当报文总长度超出 DEFAULT_BUF_LENGTH
             } else if (currentStep == 0 && currentLength == 0) {
@@ -153,7 +152,7 @@ class DoRequest implements Runnable {
 
                 //get无body
                 if (HttpMethod.GET.equals(request.getMethod())) {
-                    request.setParseEnd();
+                    HttpUtil.setParseEnd(request);
                     return request;
                 }
 
@@ -175,7 +174,7 @@ class DoRequest implements Runnable {
                             return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
                             //最后一位
                         } else if (efIdx == all.length) {
-                            request.setParseEnd();
+                            HttpUtil.setParseEnd(request);
                         } else {
                             int currentContentLength = all.length - efIdx;
                             String header = request.getHeader("Content-Type");
@@ -197,8 +196,8 @@ class DoRequest implements Runnable {
                                     byte[] body = new byte[(int) contentLength];
                                     System.arraycopy(all, efIdx, body, 0, currentContentLength);
                                     System.arraycopy(temp, 0, body, currentContentLength, (int) ll);
-                                    request.setBody(body);
-                                    request.setParseEnd();
+                                    HttpUtil.setBody(request, body);
+                                    HttpUtil.setParseEnd(request);
                                 }
 
                             }
@@ -207,7 +206,7 @@ class DoRequest implements Runnable {
                     }
                 }
             }
-        } while (!request.isParseEnd() && all.length != 0);
+        } while (request.isParseEnd() && all.length != 0);
         return request;
     }
 
@@ -232,8 +231,10 @@ class DoRequest implements Runnable {
             temp = IoUtil.readBytes2(netChannel, (int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }
-        request.setMultipartFile(multipartFileStack.pop().endWrite());
-        request.setParseEnd();
+        MultipartFile pop = multipartFileStack.pop();
+        HttpUtil.endWrite(pop);
+        HttpUtil.setMultipartFile(request,pop);
+        HttpUtil.setParseEnd(request);
     }
 
 

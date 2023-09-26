@@ -150,20 +150,20 @@ public class ContentType implements Serializable {
         return create(mimeType, !StringUtil.isBlank(charset) ? Charset.forName(charset) : null);
     }
 
-    private static ContentType create(DataMap helem, final boolean strict) {
+    private static ContentType create(DataMap helem) {
         final String mimeType = helem.getString("mimeType");
         if (StringUtil.isBlank(mimeType)) {
             return null;
         }
-        return create(mimeType, helem.getData("Parameters"), strict);
+        return create(mimeType, helem.getData("Parameters"));
     }
 
-    private static ContentType create(final String mimeType, DataMap params, final boolean strict) {
+    private static ContentType create(final String mimeType, DataMap params) {
         Charset charset = null;
         if (params != null) {
             charset = params.getCharSet(CHARSET, StandardCharsets.UTF_8);
         }
-        return new ContentType(mimeType, charset, params != null && params.size() > 0 ? params : null);
+        return new ContentType(mimeType, charset, params != null && !params.isEmpty() ? params : null);
     }
 
     public static ContentType parseContentType(String resourceUrl) {
@@ -209,16 +209,11 @@ public class ContentType implements Serializable {
     }
 
 
-    public static ContentType parse(final CharSequence s) throws UnsupportedCharsetException {
-        return parse(s, true);
-    }
-
-
     public static ContentType parseLenient(final CharSequence s) throws UnsupportedCharsetException {
-        return parse(s, false);
+        return parse(s);
     }
 
-    private static ContentType parse(final CharSequence s, final boolean strict) throws UnsupportedCharsetException {
+    public static ContentType parse(final CharSequence s) throws UnsupportedCharsetException {
         if (StringUtil.isBlank(s)) {
             return null;
         }
@@ -236,8 +231,8 @@ public class ContentType implements Serializable {
             if (split1.length == 2)
                 Parameters.put(split1[0], split1[1]);
         }
-        if (dataMap.size() > 0) {
-            return create(dataMap, strict);
+        if (!dataMap.isEmpty()) {
+            return create(dataMap);
         }
         return null;
     }

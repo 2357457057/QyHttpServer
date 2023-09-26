@@ -32,20 +32,18 @@ public class Request implements HttpAction, Serializable {
     private final DataMap cookie = new DataMap();
 
     private Session session;
-    @JSONField(serialize=false)
+    @JSONField(serialize = false)
     private MultipartFile multipartFile;
-    @JSONField(serialize=false)
+    @JSONField(serialize = false)
     private byte[] body;
-    @JSONField(serialize=false)
+    @JSONField(serialize = false)
     private boolean parseEnd = false;
 
-    @Deprecated
-    public void setParseEnd() {
+    void setParseEnd() {
         this.parseEnd = true;
     }
 
-    @Deprecated
-    public void setMethod(byte[] method) {
+    void setMethod(byte[] method) {
         this.method = HttpMethod.getMethod(new String(method, StandardCharsets.UTF_8));
     }
 
@@ -62,18 +60,15 @@ public class Request implements HttpAction, Serializable {
         this.httpVersion = httpVersion;
     }
 
-    @Deprecated
-    public void setHttpVersion(byte[] httpVersion) {
+    void setHttpVersion(byte[] httpVersion) {
         this.httpVersion = HttpVersion.getVersion(new String(httpVersion, StandardCharsets.UTF_8));
     }
-
 
     public void setUrl(String url) {
         this.url = url;
     }
 
-    @Deprecated
-    public void setUrl(byte[] url) {
+    void setUrl(byte[] url) {
         //中文解码
         this.url = URLDecoder.decode(new String(url, StandardCharsets.UTF_8), StandardCharsets.UTF_8);
     }
@@ -82,23 +77,19 @@ public class Request implements HttpAction, Serializable {
         this.header.put(key, obj);
     }
 
-    @Deprecated
-    public void putUrlParam(String key, Object obj) {
+    void putUrlParam(String key, Object obj) {
         this.urlParam.put(key, obj);
     }
 
-    @Deprecated
-    public void setBody(byte[] body) {
+    void setBody(byte[] body) {
         this.body = body;
     }
 
-    @Deprecated
-    public void setSession(Session session) {
+    void setSession(Session session) {
         this.session = session;
     }
 
-    @Deprecated
-    public void putHeader(byte[] key, byte[] obj) {
+    void putHeader(byte[] key, byte[] obj) {
         String keyStr = new String(key, StandardCharsets.UTF_8);
         String vStr = obj == null ? "" : new String(obj, StandardCharsets.UTF_8);
         if ("Cookie".equals(keyStr)) {
@@ -135,7 +126,6 @@ public class Request implements HttpAction, Serializable {
         return null;
     }
 
-    @Deprecated
     public byte[] gainBody() {
         return body;
     }
@@ -144,19 +134,16 @@ public class Request implements HttpAction, Serializable {
         return this.cookie;
     }
 
-    @Deprecated
-    public boolean canCompress() {
+    boolean canCompress() {
         String string = header.getString("Accept-Encoding", "");
         return string.toUpperCase().contains("GZIP");
     }
 
-    @Deprecated
-    public MultipartFile getMultipartFile() {
+    MultipartFile getMultipartFile() {
         return multipartFile;
     }
 
-    @Deprecated
-    public void setMultipartFile(MultipartFile multipartFile) {
+    void setMultipartFile(MultipartFile multipartFile) {
         this.multipartFile = multipartFile;
     }
 

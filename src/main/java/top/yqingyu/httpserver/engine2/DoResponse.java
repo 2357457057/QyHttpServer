@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicLong;
 
-import static io.netty.handler.codec.http.HttpUtil.setContentLength;
+
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 
@@ -46,7 +46,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
                 FileChannel fileChannel = FileChannel.open(file_body.toPath(), StandardOpenOption.READ);
                 HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
                 addHeader(nettyResponse, response);
-                setContentLength(nettyResponse, fileChannel.size());
+                HttpUtil.setContentLength(nettyResponse, fileChannel.size());
                 ctx.write(nettyResponse);
                 ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
                 ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
@@ -84,7 +84,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         if (response.getStrBody() == null && response.gainFileBody() == null)
             return;
 
-        if (!request.canCompress())
+        if (!top.yqingyu.httpserver.common.HttpUtil.canCompress(request))
             return;
 
         String strBody = response.getStrBody();

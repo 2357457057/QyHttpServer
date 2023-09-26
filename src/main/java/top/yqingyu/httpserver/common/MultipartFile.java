@@ -17,9 +17,6 @@ public class MultipartFile implements Serializable {
     private final String fileName;
 
     private final File file;
-
-    private FileChannel fileChannel;
-    private FileInputStream fileInputStream;
     private FileOutputStream fileOutputStream;
     private boolean isTransmitted;
 
@@ -87,15 +84,13 @@ public class MultipartFile implements Serializable {
 
     }
 
-    @Deprecated
-    public void write(byte[] bytes) throws IOException {
+
+    void write(byte[] bytes) throws IOException {
         fileOutputStream.write(bytes);
     }
 
-    @Deprecated
-    public MultipartFile endWrite() throws IOException {
+    void endWrite() throws IOException {
         fileOutputStream.close();
-        return this;
     }
 
 }

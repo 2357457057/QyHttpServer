@@ -33,7 +33,6 @@ public class Session implements Serializable {
         newInstance = true;
     }
 
-    @Deprecated
     public String getSessionVersionID() {
         return sessionVersionID;
     }
@@ -70,13 +69,11 @@ public class Session implements Serializable {
         this.sessionData.clear();
     }
 
-    @Deprecated
     public boolean isNewInstance() {
         return newInstance;
     }
 
-    @Deprecated
-    public void setNewInstance(boolean newInstance) {
-        this.newInstance = newInstance;
+    void setNewInstance() {
+        this.newInstance = false;
     }
 }

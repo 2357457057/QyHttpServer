@@ -19,7 +19,10 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -56,8 +59,7 @@ class DoResponse implements Runnable {
             Field sessionContainer = Session.class.getDeclaredField("SESSION_CONTAINER");
             sessionContainer.setAccessible(true);
 
-            @SuppressWarnings("unchecked")
-            ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
+            @SuppressWarnings("unchecked") ConcurrentDataMap<String, Session> temp2 = (ConcurrentDataMap<String, Session>) sessionContainer.get(null);
 
             temp = temp2;
         } catch (Exception ignore) {
@@ -98,8 +100,7 @@ class DoResponse implements Runnable {
                     return;
                 }
 
-                if (response == null)
-                    response = new Response();
+                if (response == null) response = new Response();
                 if (request == null) {
                     request = new Request();
                 }
@@ -161,20 +162,19 @@ class DoResponse implements Runnable {
             //session相关逻辑
             Session session;
             String sessionID = request.getCookie(Session.name);
-            if (SESSION_CONTAINER.containsKey(sessionID))
-                session = SESSION_CONTAINER.get(sessionID);
+            if (SESSION_CONTAINER.containsKey(sessionID)) session = SESSION_CONTAINER.get(sessionID);
             else {
                 session = new Session();
                 SESSION_CONTAINER.put(session.getSessionVersionID(), session);
             }
-            request.setSession(session);
+            HttpUtil.setSession(request, session);
 
             //接口资源
-            LocationDispatcher.beanResourceMapping(request, response,false);
+            LocationDispatcher.beanResourceMapping(request, response, false);
 
 
             if (response.isAssemble() && request.getSession().isNewInstance()) {
-                session.setNewInstance(false);
+                HttpUtil.setInstanceFalse(session);
                 Cookie cookie = new Cookie(Session.name, session.getSessionVersionID());
                 cookie.setMaxAge((int) SESSION_TIME_OUT);
                 response.addCookie(cookie);
@@ -208,7 +208,7 @@ class DoResponse implements Runnable {
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
         if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            if (request.canCompress()) {
+            if (HttpUtil.canCompress(request)) {
                 String strBody = response.getStrBody();
                 if (StringUtils.isNotBlank(strBody)) {
                     byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
@@ -256,10 +256,11 @@ class DoResponse implements Runnable {
 
         ContentType type = response.gainHeaderContentType();
         byte[] bytes;
-        if (type != null && type.getCharset() != null)
+        if (type != null && type.getCharset() != null) {
             bytes = response.toString().getBytes(type.getCharset());
-        else
+        } else {
             bytes = response.toString().getBytes();
+        }
 
         //Header
         try {
