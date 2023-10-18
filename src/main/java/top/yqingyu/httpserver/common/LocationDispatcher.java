@@ -124,22 +124,23 @@ public class LocationDispatcher {
             return;
 
         String url = request.getUrl();
+        String urlOrg = url;
         String[] urls = url.split("[?]");
         url = urls[0];
-        WebFile file = FILE_CACHING.get(url);
+        WebFile file = FILE_CACHING.get(urlOrg);
         if (file == null) {
-            String s = FILE_RESOURCE_MAPPING.get(url);
+            String s = FILE_RESOURCE_MAPPING.get(urlOrg);
             String[] fillUrl = fillUrl(url, s, response);
             url = fillUrl[0];
             s = fillUrl[1];
             //TODO  新增文件逻辑。
             if (StringUtils.isBlank(s)) {
-                removeResource(url);
+                removeResource(urlOrg);
                 return;
             }
             // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 找到 填入cache
             file = new WebFile(s);
-            FILE_CACHING.put(url, file);
+            FILE_CACHING.put(urlOrg, file);
         }
 
         if (!file.exists()) {
@@ -154,12 +155,13 @@ public class LocationDispatcher {
         //TODO  讲道理，这个要清理的。。。。。。
         ConcurrentHashMap<String, LocalDateTime> eTagCache = $304_CACHING.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
 
-        if (eTagCache.containsKey(eTag)) {
-            stateCode = "304";
-            eTagCache.put(eTag, LocalDateTime.now());
-        }
         if (StringUtil.isEmpty(eTag)) {
             eTag = StringUtil.fillBrace("W/\"{}\"", UUIDUtil.randomUUID().toString2());
+            eTagCache.put(eTag, LocalDateTime.now());
+        }
+
+        if (eTagCache.containsKey(eTag)) {
+            stateCode = "304";
             eTagCache.put(eTag, LocalDateTime.now());
         }
         response
