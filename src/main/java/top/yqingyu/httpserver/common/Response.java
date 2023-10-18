@@ -8,7 +8,6 @@ import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.httpserver.Version;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -25,14 +24,6 @@ import static top.yqingyu.common.utils.LocalDateTimeUtil.HTTP_FORMATTER;
  * @createTime 2022年09月13日 22:10:00
  */
 public class Response implements HttpAction, Serializable {
-
-    public static final Response $404_NOT_FOUND = new Response().setStatue_code("404").setHttpVersion(HttpVersion.V_1_1).setString_body("木有资源啦 ^ Ω ^").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
-    public static final Response $413_ENTITY_LARGE = new Response().setStatue_code("413").setHttpVersion(HttpVersion.V_1_1).setString_body("413 Request Entity Too Large").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
-    public static final Response $100_CONTINUE = new Response().setStatue_code("100").setHttpVersion(HttpVersion.V_1_1).setAssemble(true);
-    public static final Response $400_BAD_REQUEST = new Response().setStatue_code("400").setHttpVersion(HttpVersion.V_1_1).setString_body("400 Bad Request").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
-    public static final Response $401_BAD_REQUEST = new Response().setStatue_code("400").setHttpVersion(HttpVersion.V_1_1).setString_body("传你妈呢？").putHeaderContentType(ContentType.TEXT_PLAIN).setAssemble(true);
-
-
     private HttpVersion httpVersion;
     private String statue_code;
     private final DataMap header = new DataMap();
@@ -41,7 +32,7 @@ public class Response implements HttpAction, Serializable {
 
     private String string_body;
     @JSONField(serialize = false)
-    private File file_body;
+    private WebFile file_body;
     @JSONField(serialize = false)
     private ByteBuffer compress_body;
     @JSONField(serialize = false)
@@ -65,7 +56,7 @@ public class Response implements HttpAction, Serializable {
     //是否已压缩
     private boolean compress = false;
 
-    public File gainFileBody() {
+    public WebFile gainFileBody() {
         return file_body;
     }
 
@@ -78,7 +69,7 @@ public class Response implements HttpAction, Serializable {
         return this;
     }
 
-    public void setFile_body(File file_body) {
+    public void setFile_body(WebFile file_body) {
         this.file_body = file_body;
     }
 
@@ -215,8 +206,7 @@ public class Response implements HttpAction, Serializable {
         return string_body == null ? ArrayUtil.EMPTY_BYTE_ARRAY : string_body.getBytes(StandardCharsets.UTF_8);
     }
 
-    @Deprecated
-    public File getFile_body() {
+    public WebFile getFile_body() {
         return file_body;
     }
 
@@ -236,8 +226,12 @@ public class Response implements HttpAction, Serializable {
         if (StringUtils.isBlank(gainHeaderContentLength())) {
             if (StringUtils.isNotBlank(string_body))
                 putHeaderContentLength(string_body.getBytes(StandardCharsets.UTF_8).length);
-            else if (file_body != null)
+            else if (file_body != null) {
+                if (!file_body.exists()) {
+                    return HttpStatue.$404.Response().toString();
+                }
                 putHeaderContentLength(file_body.length());
+            }
         }
 
         header.forEach((k, v) -> sb.append(k).append(":").append(" ").append(v).append("\r\n"));

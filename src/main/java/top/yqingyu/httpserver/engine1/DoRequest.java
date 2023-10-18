@@ -13,7 +13,6 @@ import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
 import java.util.concurrent.Callable;
@@ -22,7 +21,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static top.yqingyu.common.utils.ArrayUtil.*;
-import static top.yqingyu.httpserver.common.Response.*;
+import static top.yqingyu.httpserver.common.HttpStatue.*;
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
@@ -125,7 +124,7 @@ class DoRequest implements Callable<HttpEventEntity> {
 
                     //header超出最大值直接关闭连接
                     if (all.length > MAX_HEADER_SIZE) {
-                        return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                        return $400.Response();
                     }
 
                     ArrayList<byte[]> bytes = splitByTarget(all, RN_RN);
@@ -150,7 +149,7 @@ class DoRequest implements Callable<HttpEventEntity> {
 
                     //body超出最大值直接关闭连接
                     if (contentLength > MAX_BODY_SIZE || all.length > MAX_BODY_SIZE) {
-                        return $413_ENTITY_LARGE.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                        return $413.Response();
                     }
 
                     //说明已经读完或读到头了
@@ -159,7 +158,7 @@ class DoRequest implements Callable<HttpEventEntity> {
                         int efIdx = idx + RN_RN.length;
                         //发生这个很奇怪。
                         if (idx == -1) {
-                            return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                            return $400.Response();
                             //最后一位
                         } else if (efIdx == all.length) {
                             HttpUtil.setParseEnd(request);
@@ -172,7 +171,7 @@ class DoRequest implements Callable<HttpEventEntity> {
                             if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
                                 if (!LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
                                     session.close();
-                                    return $401_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                                    return $401.Response();
                                 }
                                 fileUpload(request, session, parse, all, efIdx, currentContentLength, contentLength);
 
