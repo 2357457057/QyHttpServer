@@ -13,14 +13,15 @@ import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Stack;
-import java.util.concurrent.*;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static top.yqingyu.httpserver.common.Response.*;
 import static top.yqingyu.common.utils.ArrayUtil.*;
+import static top.yqingyu.httpserver.common.HttpStatue.*;
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
 /**
@@ -133,7 +134,7 @@ class DoRequest implements Runnable {
 
                     //header超出最大值直接关闭连接
                     if (all.length > MAX_HEADER_SIZE) {
-                        return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                        return $400.Response();
                     }
 
                     ArrayList<byte[]> bytes = splitByTarget(all, RN_RN);
@@ -144,7 +145,7 @@ class DoRequest implements Runnable {
                         HttpUtil.assembleHeader(request, bytes.get(0), netChannel);
                         // 当只收到消息头，且消息头有 Content-Length 且Content-Length在一定的范围内 此时需要
                         if (bytes.size() == 1 && StringUtils.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
-                            Response response = $100_CONTINUE.putHeaderDate(ZonedDateTime.now());
+                            Response response = $100.Response();
                             createResponse(request, response, true);
                         }
                     }
@@ -162,7 +163,7 @@ class DoRequest implements Runnable {
 
                     //body超出最大值直接关闭连接
                     if (contentLength > MAX_BODY_SIZE || all.length > MAX_BODY_SIZE) {
-                        return $413_ENTITY_LARGE.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                        return $413.Response();
                     }
 
                     //说明已经读完或读到头了
@@ -171,7 +172,7 @@ class DoRequest implements Runnable {
                         int efIdx = idx + RN_RN.length;
                         //发生这个很奇怪。
                         if (idx == -1) {
-                            return $400_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                            return $400.Response();
                             //最后一位
                         } else if (efIdx == all.length) {
                             HttpUtil.setParseEnd(request);
@@ -184,7 +185,7 @@ class DoRequest implements Runnable {
                             if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
                                 if (!LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
                                     netChannel.shutdownInput();
-                                    return $401_BAD_REQUEST.putHeaderDate(ZonedDateTime.now()).setAssemble(true);
+                                    return $401.Response();
                                 }
                                 fileUpload(request, netChannel, parse, all, efIdx, currentContentLength, contentLength);
 
@@ -211,7 +212,6 @@ class DoRequest implements Runnable {
     }
 
 
-
     /**
      * 文件上传逻辑
      *
@@ -227,17 +227,15 @@ class DoRequest implements Runnable {
         Stack<MultipartFile> multipartFileStack = new Stack<>();
         while (currentContentLength < contentLength) {
             //Multipart
-           HttpUtil.parseMultipartFile(boundaryBytes, temp, multipartFileStack);
+            HttpUtil.parseMultipartFile(boundaryBytes, temp, multipartFileStack);
             temp = IoUtil.readBytes2(netChannel, (int) DEFAULT_BUF_LENGTH * 2);
             currentContentLength += temp.length;
         }
         MultipartFile pop = multipartFileStack.pop();
         HttpUtil.endWrite(pop);
-        HttpUtil.setMultipartFile(request,pop);
+        HttpUtil.setMultipartFile(request, pop);
         HttpUtil.setParseEnd(request);
     }
-
-
 
 
 }

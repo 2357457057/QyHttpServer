@@ -13,16 +13,13 @@ import top.yqingyu.common.utils.UUIDUtil;
 import top.yqingyu.httpserver.annotation.QyController;
 import top.yqingyu.httpserver.exception.HttpException;
 
-import java.io.File;
 import java.lang.reflect.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
-import static top.yqingyu.httpserver.common.ServerConfig.resourceReloadingTime;
 
 
 /**
@@ -38,8 +35,8 @@ public class LocationDispatcher {
 
     public static ConcurrentHashMap<String, String> FILE_RESOURCE_MAPPING = new ConcurrentHashMap<>();
     public static List<String> RootPathArray = new ArrayList<>();
-    static final ConcurrentHashMap<String, String> FILE_CACHING = new ConcurrentHashMap<>();
-
+    static final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalDateTime>> $304_CACHING = new ConcurrentHashMap<>();
+    static final ConcurrentHashMap<String, WebFile> FILE_CACHING = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<String, Bean> BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
     public static final ConcurrentHashMap<String, Bean> MULTIPART_BEAN_RESOURCE_MAPPING = new ConcurrentHashMap<>();
 
@@ -47,35 +44,12 @@ public class LocationDispatcher {
 
     static final String[] FILE_SUFFIX = {".html", "index.html", "index.htm"};
 
-    static AtomicReference<Thread> thread = new AtomicReference<>();
 
     static void loadingFileResource(String rootPath) {
         HashMap<String, String> mapping = ResourceUtil.getFilePathMapping(rootPath);
         FILE_RESOURCE_MAPPING.putAll(mapping);
         RootPathArray.add(rootPath);
         log.debug("loading  {} resource mapping", rootPath);
-
-        if (thread.get() == null) {
-            Thread th = new Thread(() -> {
-                while (!Thread.interrupted()) {
-                    try {
-                        Thread.sleep(resourceReloadingTime);
-                    } catch (InterruptedException ignored) {
-                    }
-                    ConcurrentHashMap<String, String> map = new ConcurrentHashMap<>();
-                    for (String s : RootPathArray) {
-                        HashMap<String, String> pathMapping = ResourceUtil.getFilePathMapping(s);
-                        map.putAll(pathMapping);
-                    }
-                    FILE_RESOURCE_MAPPING = map;
-                    log.trace("静态资源重载完成");
-                }
-            });
-            thread.set(th);
-            th.setDaemon(true);
-            th.setName("rec-reload");
-            th.start();
-        }
     }
 
     static void loadingBeanResource(String packageName) {
@@ -145,50 +119,64 @@ public class LocationDispatcher {
 
 
     public static void fileResourceMapping(Request request, Response response) {
+        HttpMethod method = request.getMethod();
+        if (!HttpMethod.GET.equals(method))
+            return;
+
         String url = request.getUrl();
         String[] urls = url.split("[?]");
         url = urls[0];
-
-
-        String s = FILE_RESOURCE_MAPPING.get(url);
-
-        String[] fillUrl = fillUrl(url, s, response);
-
-        url = fillUrl[0];
-        s = fillUrl[1];
-
-        if (StringUtils.isNotBlank(s)) {
-            File file = new File(s);
-            ContentType contentType = ContentType.parseContentType(s);
-            String stateCode = "200";
-            //浏览器传来是否缓存校验数据唯一ID
-            String eTag = request.getHeader("If-None-Match");
-            String eTagValue = FILE_CACHING.get(url);
-
-            //当且仅当完全相同时可采用缓存
-            if (StringUtil.equalsNull(eTag, eTagValue)) {
-                stateCode = "304";
-                response.putHeader("ETag", eTag);
-            } else if (StringUtils.isNotBlank(eTagValue)) {
-                response.putHeader("ETag", eTagValue);
-            } else {
-                eTag = "W/\"" + UUIDUtil.randomUUID().toString2() + "\"";
-                response.putHeader("ETag", eTag);
-                FILE_CACHING.put(url, eTag);
+        WebFile file = FILE_CACHING.get(url);
+        if (file == null) {
+            String s = FILE_RESOURCE_MAPPING.get(url);
+            String[] fillUrl = fillUrl(url, s, response);
+            url = fillUrl[0];
+            s = fillUrl[1];
+            //TODO  新增文件逻辑。
+            if (StringUtils.isBlank(s)) {
+                removeResource(url);
+                HttpStatue.$404.setResponse(response);
+                return;
             }
-
-            response
-                    .putHeaderContentType(contentType)
-                    .putHeaderAcceptRanges()
-                    .putHeaderCROS()
-                    .setStatue_code(stateCode);
-
-            if (ContentType.VIDEO_MP4.equals(contentType)) {
-                response.putHeaderContentRanges(0, 1);
-            }
-            response.setFile_body(file);
-            response.setAssemble(true);
+            // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 if 找不还找不到 then 404  else 找到 填入cache
+            file = new WebFile(url);
+            FILE_CACHING.put(url, file);
         }
+
+        if (!file.exists()) {
+            removeResource(url);
+            HttpStatue.$404.setResponse(response);
+            return;
+        }
+
+        String stateCode = "200";
+        //浏览器传来是否缓存校验数据唯一ID
+        String eTag = request.getHeader("If-None-Match");
+        //TODO  讲道理，这个要清理的。。。。。。
+        ConcurrentHashMap<String, LocalDateTime> eTagCache = $304_CACHING.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
+
+        if (eTagCache.containsKey(eTag)) {
+            stateCode = "304";
+            eTagCache.put(eTag, LocalDateTime.now());
+        }
+        if (StringUtil.isEmpty(eTag)) {
+            eTag = StringUtil.fillBrace("W/\"{}\"", UUIDUtil.randomUUID().toString2());
+            eTagCache.put(eTag, LocalDateTime.now());
+        }
+        response
+                .putHeaderContentType(file.getContentType())
+                .putHeaderCROS()
+                .setStatue_code(stateCode)
+                .putHeader("ETag", eTag)
+                .setAssemble(true)
+                .setFile_body(file);
+
+    }
+
+    static void removeResource(String url) {
+        $304_CACHING.remove(url);
+        FILE_CACHING.remove(url);
+        FILE_RESOURCE_MAPPING.remove(url);
     }
 
     public static void beanResourceMapping(Request request, Response response, boolean $throw) throws InvocationTargetException, IllegalAccessException {
@@ -316,7 +304,6 @@ public class LocationDispatcher {
 
                 response
                         .setStatue_code("200")
-                        .putHeaderAcceptRanges()
                         .setAssemble(true);
             }
 
@@ -346,6 +333,9 @@ public class LocationDispatcher {
 
     }
 
+    /**
+     * index 重定向
+     */
     static String[] fillUrl(String url, String s, Response response) {
 
         for (String fileSuffix : FILE_SUFFIX) {

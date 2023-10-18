@@ -154,7 +154,7 @@ class DoResponse implements Callable<Object> {
 
         //NotFound
         if (!response.isAssemble()) {
-            resp.setRelease(Response.$404_NOT_FOUND.putHeaderDate(ZonedDateTime.now()));
+            resp.setRelease(HttpStatue.$404.Response());
         }
 
     }

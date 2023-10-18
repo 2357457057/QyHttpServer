@@ -108,7 +108,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         //NotFound
         if (!qyResp.isAssemble()) {
-            qyResp = Response.$404_NOT_FOUND.putHeaderDate(ZonedDateTime.now());
+            qyResp = HttpStatue.$404.Response();
         }
         logger.debug("Request {}", JSON.toJSONString(qyReq));
         Channel channel = ctx.channel();

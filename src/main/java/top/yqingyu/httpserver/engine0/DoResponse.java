@@ -184,7 +184,7 @@ class DoResponse implements Runnable {
 
         //NotFound
         if (!response.isAssemble()) {
-            resp.setRelease(Response.$404_NOT_FOUND.putHeaderDate(ZonedDateTime.now()));
+            resp.setRelease(HttpStatue.$404.Response());
         }
 
     }
@@ -207,52 +207,49 @@ class DoResponse implements Runnable {
         if (requestCtTyp != null)
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
-        if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            if (HttpUtil.canCompress(request)) {
-                String strBody = response.getStrBody();
-                if (StringUtils.isNotBlank(strBody)) {
-                    byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
-                    buffer.put(bytes);
-                    response.setCompress_body(buffer);
-                    response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                } else {
-                    if (FILE_BYTE_CACHE.containsKey(url)) {
-                        byte[] bytes = FILE_BYTE_CACHE.get(url);
-                        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
-                        byteBuffer.put(bytes);
-                        response.setCompress_body(byteBuffer);
-                        response.putHeaderContentLength(byteBuffer.limit()).putHeaderCompress();
-                    } else {
-                        File file = response.getFile_body();
-                        if (file != null) {
-                            long length = file.length();
-                            if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
-                                byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
-                                ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
-                                buffer.put(bytes);
-                                //开启压缩池
-                                if (CACHE_POOL_ON) {
-                                    FILE_BYTE_CACHE.put(url, bytes);
-                                    CurrentFileCacheSize.addAndGet(bytes.length);
-                                }
-
-                                response.setCompress_body(buffer);
-                                response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                            }
-                        }
-                    }
-                }
+        if ("304|100".contains(response.getStatue_code())) return;
+        if (response.getStrBody() == null && response.gainFileBody() == null) return;
+        if (!HttpUtil.canCompress(request)) return;
+        String strBody = response.getStrBody();
+        if (StringUtils.isNotBlank(strBody)) {
+            byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            buffer.put(bytes);
+            response.setCompress_body(buffer);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
+            return;
+        }
+        if (FILE_BYTE_CACHE.containsKey(url)) {
+            byte[] bytes = FILE_BYTE_CACHE.get(url);
+            ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
+            byteBuffer.put(bytes);
+            response.setCompress_body(byteBuffer);
+            response.putHeaderContentLength(byteBuffer.limit()).putHeaderCompress();
+            return;
+        }
+        File file = response.getFile_body();
+        if (file == null || !file.exists()) {
+            return;
+        }
+        long length = file.length();
+        if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
+            byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            buffer.put(bytes);
+            //开启压缩池
+            if (CACHE_POOL_ON) {
+                FILE_BYTE_CACHE.put(url, bytes);
+                CurrentFileCacheSize.addAndGet(bytes.length);
             }
+
+            response.setCompress_body(buffer);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
         }
     }
 
     @SuppressWarnings("all")
     private void doResponse(AtomicReference<Response> resp, SocketChannel socketChannel) throws Exception {
-
-
         Response response = resp.get();
-
 
         ContentType type = response.gainHeaderContentType();
         byte[] bytes;
@@ -269,29 +266,31 @@ class DoResponse implements Runnable {
             log.error("", e);
             socketChannel.close();
         }
-        //body
-        if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            byte[] buf = new byte[(int) DEFAULT_SEND_BUF_LENGTH];
-            int length;
-            File file_body = response.getFile_body();
-            if (file_body != null && !response.isCompress()) {
-                FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
-                long l = 0;
-                long size = fileChannel.size();
-                do {
-                    l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, socketChannel);
-                } while (l != size);
-                fileChannel.close();
-            } else {
-                try {
-                    IoUtil.writeBytes(socketChannel, response.gainBodyBytes(), 2000);
-                } catch (Exception e) {
-                    log.error("", e);
-                    socketChannel.close();
-                }
-            }
+        if ("304|100".contains(response.getStatue_code())) {
+            return;
         }
-
+        if (response.getStrBody() == null && response.gainFileBody() == null) {
+            return;
+        }
+        byte[] buf = new byte[(int) DEFAULT_SEND_BUF_LENGTH];
+        int length;
+        File file_body = response.getFile_body();
+        if (file_body != null && !response.isCompress()) {
+            FileChannel fileChannel = new FileInputStream(response.getFile_body()).getChannel();
+            long l = 0;
+            long size = fileChannel.size();
+            do {
+                l += fileChannel.transferTo(l, DEFAULT_SEND_BUF_LENGTH, socketChannel);
+            } while (l != size);
+            fileChannel.close();
+            return;
+        }
+        try {
+            IoUtil.writeBytes(socketChannel, response.gainBodyBytes(), 2000);
+        } catch (Exception e) {
+            log.error("", e);
+            socketChannel.close();
+        }
         log.trace("Response: {}", response.toJsonString());
     }
 

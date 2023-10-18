@@ -3,7 +3,8 @@ package top.yqingyu.httpserver.engine2;
 import com.alibaba.fastjson2.JSON;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufAllocator;
-import io.netty.channel.*;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedNioFile;
@@ -18,13 +19,13 @@ import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicLong;
-
 
 import static top.yqingyu.httpserver.common.ServerConfig.*;
 
@@ -38,35 +39,46 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
     @Override
     protected void encode(ChannelHandlerContext ctx, HttpEventEntity msg, ByteBuf out) throws Exception {
         Response response = msg.getResponse();
-        if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
-            compress(msg);
-        if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            File file_body = response.getFile_body();
-            if (file_body != null && !response.isCompress()) {
-                FileChannel fileChannel = FileChannel.open(file_body.toPath(), StandardOpenOption.READ);
-                HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
-                addHeader(nettyResponse, response);
-                HttpUtil.setContentLength(nettyResponse, fileChannel.size());
-                ctx.write(nettyResponse);
-                ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
-                ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
-                channelFuture.addListener(e -> {
-                    fileChannel.close();
-                });
-            } else {
-                ByteBufAllocator alloc = out.alloc();
-                ByteBuf content = alloc.directBuffer(0);
-                DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK, content);
-                addHeader(httpResponse, response);
-                content.writeBytes(response.gainBodyBytes2());
-                ctx.writeAndFlush(httpResponse);
-            }
-        } else if ("304|100".contains(response.getStatue_code())) {
+        logger.debug("Response {}", JSON.toJSONString(response));
+        if ("304|100".contains(response.getStatue_code())) {
             DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_MODIFIED);
             addHeader(httpResponse, response);
             ctx.writeAndFlush(httpResponse);
+            return;
         }
-        logger.debug("Response {}", JSON.toJSONString(response));
+
+        if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
+            compress(msg);
+
+
+        if ((response.getStrBody() == null && response.gainFileBody() == null)) {
+            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+            ctx.writeAndFlush(httpResponse);
+            return;
+        }
+
+        File file_body = response.getFile_body();
+        if (file_body != null && !file_body.exists()) {
+            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+            ctx.writeAndFlush(httpResponse);
+        }
+        if (file_body == null || response.isCompress()) {
+            ByteBufAllocator alloc = out.alloc();
+            ByteBuf content = alloc.directBuffer(0);
+            DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.valueOf(Integer.parseInt(response.getStatue_code())), content);
+            addHeader(httpResponse, response);
+            content.writeBytes(response.gainBodyBytes2());
+            ctx.writeAndFlush(httpResponse);
+            return;
+        }
+        FileChannel fileChannel = FileChannel.open(file_body.toPath(), StandardOpenOption.READ);
+        HttpResponse nettyResponse = new DefaultHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.OK);
+        addHeader(nettyResponse, response);
+        HttpUtil.setContentLength(nettyResponse, fileChannel.size());
+        ctx.write(nettyResponse);
+        ctx.write(new ChunkedNioFile(fileChannel, 0, fileChannel.size(), 3096), ctx.newProgressivePromise());
+        ChannelFuture channelFuture = ctx.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+        channelFuture.addListener(e -> fileChannel.close());
     }
 
     private void compress(HttpEventEntity eventEntity) throws IOException {
@@ -121,9 +133,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         DataMap header = orin.getHeader();
         HttpHeaders headers = response.headers();
         ConcurrentDataSet<top.yqingyu.httpserver.common.Cookie> cookies = orin.getCookies();
-        cookies.forEach((e) -> {
-            headers.add("set-cookie", e.toCookieValStr());
-        });
+        cookies.forEach((e) -> headers.add("set-cookie", e.toCookieValStr()));
         header.forEach(headers::add);
     }
 
