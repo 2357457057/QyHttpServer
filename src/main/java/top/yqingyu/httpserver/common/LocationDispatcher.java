@@ -157,13 +157,12 @@ public class LocationDispatcher {
 
         if (StringUtil.isEmpty(eTag)) {
             eTag = StringUtil.fillBrace("W/\"{}\"", UUIDUtil.randomUUID().toString2());
-            eTagCache.put(eTag, LocalDateTime.now());
         }
 
         if (eTagCache.containsKey(eTag)) {
             stateCode = "304";
-            eTagCache.put(eTag, LocalDateTime.now());
         }
+        eTagCache.put(eTag, LocalDateTime.now());
         response
                 .putHeaderContentType(file.getContentType())
                 .putHeaderCROS()
