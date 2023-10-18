@@ -138,7 +138,7 @@ public class LocationDispatcher {
                 return;
             }
             // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 找到 填入cache
-            file = new WebFile(url);
+            file = new WebFile(s);
             FILE_CACHING.put(url, file);
         }
 
