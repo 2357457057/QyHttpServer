@@ -135,10 +135,9 @@ public class LocationDispatcher {
             //TODO  新增文件逻辑。
             if (StringUtils.isBlank(s)) {
                 removeResource(url);
-                HttpStatue.$404.setResponse(response);
                 return;
             }
-            // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 if 找不还找不到 then 404  else 找到 填入cache
+            // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 找到 填入cache
             file = new WebFile(url);
             FILE_CACHING.put(url, file);
         }
