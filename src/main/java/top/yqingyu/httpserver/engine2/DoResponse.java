@@ -18,6 +18,7 @@ import top.yqingyu.common.utils.GzipUtil;
 import top.yqingyu.httpserver.common.ContentType;
 import top.yqingyu.httpserver.common.Request;
 import top.yqingyu.httpserver.common.Response;
+import top.yqingyu.httpserver.common.WebFile;
 
 import java.io.File;
 import java.io.IOException;
@@ -40,7 +41,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
     protected void encode(ChannelHandlerContext ctx, HttpEventEntity msg, ByteBuf out) throws Exception {
         Response response = msg.getResponse();
         logger.debug("Response {}", JSON.toJSONString(response));
-        if ("304|100".contains(response.getStatue_code())) {
+        if ("304".equals(response.getStatue_code())) {
             DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_MODIFIED);
             addHeader(httpResponse, response);
             ctx.writeAndFlush(httpResponse);
@@ -50,9 +51,9 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         if (FILE_COMPRESS_ON && !UN_DO_COMPRESS_FILE.contains(response.gainHeaderContentType()))
             compress(msg);
 
-
         if ((response.getStrBody() == null && response.gainFileBody() == null)) {
             DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+            addHeader(httpResponse, response);
             ctx.writeAndFlush(httpResponse);
             return;
         }
@@ -60,6 +61,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         File file_body = response.getFile_body();
         if (file_body != null && !file_body.exists()) {
             DefaultFullHttpResponse httpResponse = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.NOT_FOUND);
+            addHeader(httpResponse, response);
             ctx.writeAndFlush(httpResponse);
         }
         if (file_body == null || response.isCompress()) {
@@ -84,6 +86,9 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
     private void compress(HttpEventEntity eventEntity) throws IOException {
         Request request = eventEntity.getRequest();
         Response response = eventEntity.getResponse();
+        if (!top.yqingyu.httpserver.common.HttpUtil.canCompress(request))
+            return;
+
         String url = request.getUrl();
         ContentType requestCtTyp = ContentType.parse(request.getHeader("Content-Type"));
         Charset charset;
@@ -96,9 +101,6 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
         if (response.getStrBody() == null && response.gainFileBody() == null)
             return;
 
-        if (!top.yqingyu.httpserver.common.HttpUtil.canCompress(request))
-            return;
-
         String strBody = response.getStrBody();
         if (StringUtils.isNotBlank(strBody)) {
             byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
@@ -106,16 +108,20 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
             response.putHeaderContentLength(bytes.length).putHeaderCompress();
             return;
         }
+        WebFile file = response.getFile_body();
+        if (file == null) {
+            return;
+        }
+        if (file.isModify() && FILE_BYTE_CACHE.containsKey(url))
+            CurrentFileCacheSize.lazySet(CurrentFileCacheSize.get() - FILE_BYTE_CACHE.remove(url).length);
+
         if (FILE_BYTE_CACHE.containsKey(url)) {
             byte[] bytes = FILE_BYTE_CACHE.get(url);
             response.setCompressByteBody(bytes);
             response.putHeaderContentLength(bytes.length).putHeaderCompress();
             return;
         }
-        File file = response.getFile_body();
-        if (file == null) {
-            return;
-        }
+
         long length = file.length();
         if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
             byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
