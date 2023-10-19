@@ -199,17 +199,17 @@ class DoResponse implements Runnable {
      * @description
      */
     private void compress(Request request, AtomicReference<Response> resp) throws IOException {
+        if (!HttpUtil.canCompress(request)) return;
         Response response = resp.get();
         String url = request.getUrl();
         ContentType requestCtTyp = ContentType.parse(request.getHeader("Content-Type"));
+        if ("304|100".contains(response.getStatue_code())) return;
+        if (response.getStrBody() == null && response.gainFileBody() == null) return;
 
         Charset charset;
         if (requestCtTyp != null)
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
-        if ("304|100".contains(response.getStatue_code())) return;
-        if (response.getStrBody() == null && response.gainFileBody() == null) return;
-        if (!HttpUtil.canCompress(request)) return;
         String strBody = response.getStrBody();
         if (StringUtils.isNotBlank(strBody)) {
             byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
@@ -219,6 +219,13 @@ class DoResponse implements Runnable {
             response.putHeaderContentLength(bytes.length).putHeaderCompress();
             return;
         }
+        WebFile file = response.getFile_body();
+        if (file == null || !file.exists()) {
+            return;
+        }
+        if (FILE_BYTE_CACHE.containsKey(url) && file.isModify())
+            CurrentFileCacheSize.lazySet(CurrentFileCacheSize.get() - FILE_BYTE_CACHE.remove(url).length);
+
         if (FILE_BYTE_CACHE.containsKey(url)) {
             byte[] bytes = FILE_BYTE_CACHE.get(url);
             ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
@@ -227,10 +234,7 @@ class DoResponse implements Runnable {
             response.putHeaderContentLength(byteBuffer.limit()).putHeaderCompress();
             return;
         }
-        File file = response.getFile_body();
-        if (file == null || !file.exists()) {
-            return;
-        }
+
         long length = file.length();
         if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
             byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
@@ -286,7 +290,8 @@ class DoResponse implements Runnable {
             return;
         }
         try {
-            IoUtil.writeBytes(socketChannel, response.gainBodyBytes(), 2000);
+            ByteBuffer buffer = response.gainBodyBytes();
+            IoUtil.writeBytes(socketChannel, buffer, 2000);
         } catch (Exception e) {
             log.error("", e);
             socketChannel.close();

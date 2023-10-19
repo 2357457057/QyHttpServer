@@ -52,8 +52,7 @@ class DoResponse implements Callable<Object> {
             Field sessionContainer = top.yqingyu.httpserver.common.Session.class.getDeclaredField("SESSION_CONTAINER");
             sessionContainer.setAccessible(true);
 
-            @SuppressWarnings("unchecked")
-            ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session> temp2 = (ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session>) sessionContainer.get(null);
+            @SuppressWarnings("unchecked") ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session> temp2 = (ConcurrentDataMap<String, top.yqingyu.httpserver.common.Session>) sessionContainer.get(null);
 
             temp = temp2;
         } catch (Exception ignore) {
@@ -85,8 +84,7 @@ class DoResponse implements Callable<Object> {
                 return null;
             }
 
-            if (response == null)
-                response = new Response();
+            if (response == null) response = new Response();
             if (request == null) {
                 request = new Request();
             }
@@ -134,8 +132,7 @@ class DoResponse implements Callable<Object> {
             //session相关逻辑
             top.yqingyu.httpserver.common.Session session;
             String sessionID = request.getCookie(top.yqingyu.httpserver.common.Session.name);
-            if (SESSION_CONTAINER.containsKey(sessionID))
-                session = SESSION_CONTAINER.get(sessionID);
+            if (SESSION_CONTAINER.containsKey(sessionID)) session = SESSION_CONTAINER.get(sessionID);
             else {
                 session = new top.yqingyu.httpserver.common.Session();
                 SESSION_CONTAINER.put(session.getSessionVersionID(), session);
@@ -169,6 +166,9 @@ class DoResponse implements Callable<Object> {
      * @description
      */
     private void compress(Request request, AtomicReference<Response> resp) throws IOException {
+        if (!HttpUtil.canCompress(request)) {
+            return;
+        }
         Response response = resp.get();
         String url = request.getUrl();
         ContentType requestCtTyp = ContentType.parse(request.getHeader("Content-Type"));
@@ -177,48 +177,56 @@ class DoResponse implements Callable<Object> {
         if (requestCtTyp != null)
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
-        if (!"304|100".contains(response.getStatue_code()) || (response.getStrBody() != null ^ response.gainFileBody() == null)) {
-            if (HttpUtil.canCompress(request)) {
-                String strBody = response.getStrBody();
-                if (StringUtils.isNotBlank(strBody)) {
-                    byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
-                    ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
-                    buffer.put(bytes);
-                    response.setCompress_body(buffer);
-                    response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                } else {
-                    if (FILE_BYTE_CACHE.containsKey(url)) {
-                        byte[] bytes = FILE_BYTE_CACHE.get(url);
-                        ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
-                        byteBuffer.put(bytes);
-                        response.setCompress_body(byteBuffer);
-                        response.putHeaderContentLength(byteBuffer.limit()).putHeaderCompress();
-                    } else {
-                        File file = response.getFile_body();
-                        if (file != null) {
-                            long length = file.length();
-                            if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
-                                byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
-                                ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
-                                buffer.put(bytes);
-                                //开启压缩池
-                                if (CACHE_POOL_ON) {
-                                    FILE_BYTE_CACHE.put(url, bytes);
-                                    CurrentFileCacheSize.addAndGet(bytes.length);
-                                }
-
-                                response.setCompress_body(buffer);
-                                response.putHeaderContentLength(bytes.length).putHeaderCompress();
-                            }
-                        }
-                    }
-                }
-            }
+        if ("304|100".contains(response.getStatue_code())) {
+            return;
         }
+        if ((response.getStrBody() == null && response.gainFileBody() == null)) {
+            return;
+        }
+        String strBody = response.getStrBody();
+        if (StringUtils.isNotBlank(strBody)) {
+            byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            buffer.put(bytes);
+            response.setCompress_body(buffer);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
+            return;
+        }
+        WebFile file = response.getFile_body();
+        if (file == null) {
+            return;
+        }
+        if (FILE_BYTE_CACHE.containsKey(url) && file.isModify())
+            CurrentFileCacheSize.lazySet(CurrentFileCacheSize.get() - FILE_BYTE_CACHE.remove(url).length);
+        if (FILE_BYTE_CACHE.containsKey(url)) {
+            byte[] bytes = FILE_BYTE_CACHE.get(url);
+            ByteBuffer byteBuffer = ByteBuffer.allocateDirect(bytes.length);
+            byteBuffer.put(bytes);
+            response.setCompress_body(byteBuffer);
+            response.putHeaderContentLength(byteBuffer.limit()).putHeaderCompress();
+            return;
+        }
+        long length = file.length();
+        if (length < MAX_SINGLE_FILE_COMPRESS_SIZE && CurrentFileCacheSize.get() < MAX_FILE_CACHE_SIZE) {
+            byte[] bytes = GzipUtil.$2CompressBytes(response.getFile_body());
+            ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
+            buffer.put(bytes);
+            //开启压缩池
+            if (CACHE_POOL_ON) {
+                FILE_BYTE_CACHE.put(url, bytes);
+                CurrentFileCacheSize.addAndGet(bytes.length);
+            }
+
+            response.setCompress_body(buffer);
+            response.putHeaderContentLength(bytes.length).putHeaderCompress();
+        }
+
+
     }
 
     @SuppressWarnings("all")
-    private void doResponse(AtomicReference<Response> resp, NetChannel netChannel) throws Exception {
+    private void doResponse(AtomicReference<Response> resp, NetChannel netChannel) throws
+            Exception {
 
 
         Response response = resp.get();
@@ -226,10 +234,8 @@ class DoResponse implements Callable<Object> {
 
         ContentType type = response.gainHeaderContentType();
         byte[] bytes;
-        if (type != null && type.getCharset() != null)
-            bytes = response.toString().getBytes(type.getCharset());
-        else
-            bytes = response.toString().getBytes();
+        if (type != null && type.getCharset() != null) bytes = response.toString().getBytes(type.getCharset());
+        else bytes = response.toString().getBytes();
 
         //Header
         try {

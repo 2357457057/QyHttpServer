@@ -123,24 +123,25 @@ public class LocationDispatcher {
         if (!HttpMethod.GET.equals(method))
             return;
 
-        String url = request.getUrl();
-        String urlOrg = url;
-        String[] urls = url.split("[?]");
-        url = urls[0];
-        WebFile file = FILE_CACHING.get(urlOrg);
+        String urlOrg = request.getUrl();
+        String[] urls = urlOrg.split("[?]");
+        String url = urls[0];
+
+        WebFile file = FILE_CACHING.get(url);
         if (file == null) {
-            String s = FILE_RESOURCE_MAPPING.get(urlOrg);
-            String[] fillUrl = fillUrl(url, s, response);
-            url = fillUrl[0];
-            s = fillUrl[1];
-            //TODO  新增文件逻辑。
+            String s = FILE_RESOURCE_MAPPING.get(url);
+            s = fillUrl(url, s, response);
             if (StringUtils.isBlank(s)) {
-                removeResource(urlOrg);
-                return;
+                removeResource(url);
+                file = fromDisk(url);
+                if (file == null) {
+                    HttpStatue.$404.setResponse(response);
+                    return;
+                }
+            } else {
+                file = new WebFile(s);
+                FILE_CACHING.put(url, file);
             }
-            // 在对丁的路径文件系统找 ，路径里不能有上一级，或上一级的 解析最后是在路径里的。 》》》 找到 填入cache
-            file = new WebFile(s);
-            FILE_CACHING.put(urlOrg, file);
         }
 
         if (!file.exists()) {
@@ -152,17 +153,19 @@ public class LocationDispatcher {
         String stateCode = "200";
         //浏览器传来是否缓存校验数据唯一ID
         String eTag = request.getHeader("If-None-Match");
-        //TODO  讲道理，这个要清理的。。。。。。
         ConcurrentHashMap<String, LocalDateTime> eTagCache = $304_CACHING.computeIfAbsent(url, k -> new ConcurrentHashMap<>());
 
         if (StringUtil.isEmpty(eTag)) {
             eTag = StringUtil.fillBrace("W/\"{}\"", UUIDUtil.randomUUID().toString2());
         }
 
-        if (eTagCache.containsKey(eTag)) {
+        if (eTagCache.containsKey(eTag) && !file.isModify()) {
             stateCode = "304";
         }
         eTagCache.put(eTag, LocalDateTime.now());
+        if (StringUtil.isEmpty(response.getStatue_code())) {
+            response.setStatue_code(stateCode);
+        }
         response
                 .putHeaderContentType(file.getContentType())
                 .putHeaderCROS()
@@ -175,7 +178,6 @@ public class LocationDispatcher {
 
     static void removeResource(String url) {
         $304_CACHING.remove(url);
-        FILE_CACHING.remove(url);
         FILE_RESOURCE_MAPPING.remove(url);
     }
 
@@ -336,29 +338,30 @@ public class LocationDispatcher {
     /**
      * index 重定向
      */
-    static String[] fillUrl(String url, String s, Response response) {
+    static String fillUrl(String url, String s, Response response) {
 
         for (String fileSuffix : FILE_SUFFIX) {
             if (StringUtil.isNotBlank(s))
-                return new String[]{url, s};
-            if (StringUtils.isBlank(s)) {
-                s = FILE_RESOURCE_MAPPING.get(url + fileSuffix);
-                if (StringUtil.isNotBlank(s))
-                    url += fileSuffix;
+                return s;
+            s = FILE_RESOURCE_MAPPING.get(url + fileSuffix);
+            if (StringUtil.isNotBlank(s))
+                url += fileSuffix;
+
+            if (StringUtil.isNotBlank(s)) {
+                continue;
             }
-            if (StringUtils.isBlank(s)) {
-                s = FILE_RESOURCE_MAPPING.get(url + "/" + fileSuffix);
-                if (StringUtils.isNotBlank(s)) {
-                    url = url + "/" + fileSuffix;
-                    if (url.indexOf("/") != 0)
-                        url = "/" + url;
-                    response
-                            .setStatue_code("301")
-                            .putHeaderRedirect(url);
-                }
+            s = FILE_RESOURCE_MAPPING.get(url + "/" + fileSuffix);
+            if (StringUtil.isBlank(s)) {
+                continue;
             }
+            url = url + "/" + fileSuffix;
+            if (url.indexOf("/") != 0)
+                url = "/" + url;
+            response
+                    .setStatue_code("301")
+                    .putHeaderRedirect(url);
         }
-        return new String[]{url, s};
+        return s;
     }
 
     static void matchHttpMethod(Bean bean, Request request) throws HttpException.MethodNotSupposedException {
@@ -374,4 +377,16 @@ public class LocationDispatcher {
         if ($throws) throw new HttpException.MethodNotSupposedException("请求方法不支持！");
     }
 
+
+    static WebFile fromDisk(String url) {
+        for (String s : RootPathArray) {
+            WebFile webFile = new WebFile(s + url);
+            if (webFile.exists() && webFile.isFile() &&
+                    //防越界。
+                    webFile.getAbsolutePath().startsWith(s)) {
+                return webFile;
+            }
+        }
+        return null;
+    }
 }
