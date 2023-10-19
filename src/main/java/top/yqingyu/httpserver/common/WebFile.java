@@ -17,7 +17,7 @@ public class WebFile extends File {
         if (!exists()) return true;
         long lastModified = this.lastModified();
         try {
-            return lastModified == lastModify;
+            return lastModified != lastModify;
         } finally {
             lastModify = lastModified;
         }
