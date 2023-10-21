@@ -135,7 +135,6 @@ public class LocationDispatcher {
                 removeResource(url);
                 file = fromDisk(url);
                 if (file == null) {
-                    HttpStatue.$404.setResponse(response);
                     return;
                 }
             } else {
