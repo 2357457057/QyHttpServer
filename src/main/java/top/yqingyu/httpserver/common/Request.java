@@ -100,7 +100,10 @@ public class Request implements HttpAction, Serializable {
                 if (Session.name.equals(split[0]) && Session.SESSION_CONTAINER.containsKey(split[1])) {
                     this.session = Session.SESSION_CONTAINER.get(split[0]);
                 }
-                this.cookie.put(split[0], split[1]);
+                if (split.length == 2)
+                    this.cookie.put(split[0], split[1]);
+                if (split.length == 1)
+                    this.cookie.put(split[0], "");
             }
         } else
             this.header.put(keyStr, vStr);
