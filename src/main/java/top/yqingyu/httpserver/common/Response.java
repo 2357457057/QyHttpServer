@@ -2,7 +2,7 @@ package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.annotation.JSONField;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.common.qydata.ConcurrentDataSet;
 import top.yqingyu.common.qydata.DataMap;
 import top.yqingyu.common.utils.ArrayUtil;
@@ -223,8 +223,8 @@ public class Response implements HttpAction, Serializable {
         StringBuilder sb = new StringBuilder();
         sb.append(httpVersion.getV()).append(" ").append(statue_code).append("\r\n");
 
-        if (StringUtils.isBlank(gainHeaderContentLength())) {
-            if (StringUtils.isNotBlank(string_body))
+        if (StringUtil.isBlank(gainHeaderContentLength())) {
+            if (StringUtil.isNotBlank(string_body))
                 putHeaderContentLength(string_body.getBytes(StandardCharsets.UTF_8).length);
             else if (file_body != null) {
                 if (!file_body.exists()) {

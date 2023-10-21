@@ -1,6 +1,6 @@
 package top.yqingyu.httpserver.engine1;
 
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
@@ -184,7 +184,7 @@ class DoResponse implements Callable<Object> {
             return;
         }
         String strBody = response.getStrBody();
-        if (StringUtils.isNotBlank(strBody)) {
+        if (StringUtil.isNotBlank(strBody)) {
             byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
             buffer.put(bytes);

@@ -1,7 +1,7 @@
 package top.yqingyu.httpserver.engine0;
 
 import com.alibaba.fastjson2.JSON;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
@@ -211,7 +211,7 @@ class DoResponse implements Runnable {
             charset = requestCtTyp.getCharset() == null ? StandardCharsets.UTF_8 : requestCtTyp.getCharset();
         else charset = StandardCharsets.UTF_8;
         String strBody = response.getStrBody();
-        if (StringUtils.isNotBlank(strBody)) {
+        if (StringUtil.isNotBlank(strBody)) {
             byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
             ByteBuffer buffer = ByteBuffer.allocateDirect(bytes.length);
             buffer.put(bytes);
