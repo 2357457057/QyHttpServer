@@ -1,15 +1,10 @@
 package top.yqingyu.httpserver.server;
 
-import io.netty.bootstrap.ServerBootstrap;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.nio.NioServerSocketChannel;
-import org.apache.commons.lang3.StringUtils;
-import top.yqingyu.common.utils.ThreadUtil;
+import top.yqingyu.common.utils.StringUtil;
+import top.yqingyu.httpserver.common.ServerConfig;
 import top.yqingyu.httpserver.engine0.HttpEventHandler;
 import top.yqingyu.httpserver.engine1.HttpEventHandlerV2;
-import top.yqingyu.httpserver.engine2.ServerInitial;
-import top.yqingyu.httpserver.common.ServerConfig;
+import top.yqingyu.httpserver.engine2.Engine2;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -32,7 +27,7 @@ public class HttpServerStarter {
         String temp;
 
         temp = System.getProperty("server.name");
-        if (StringUtils.isBlank(temp)) {
+        if (StringUtil.isBlank(temp)) {
             temp = "QyHttp";
         }
         SERVER_NAME = temp;
@@ -72,14 +67,7 @@ public class HttpServerStarter {
     }
 
     public static void ENGINE2() throws InterruptedException {
-        NioEventLoopGroup SERVER = new NioEventLoopGroup(1);
-        NioEventLoopGroup CLIENT = new NioEventLoopGroup(ThreadUtil.createThFactoryC(SERVER_NAME, port + "-Handler"));
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(SERVER, CLIENT);
-        bootstrap.channel(NioServerSocketChannel.class);
-        bootstrap.childHandler(new ServerInitial());
-        ChannelFuture sync = bootstrap.bind(port).sync();
-        sync.channel().closeFuture().sync();
+        Engine2.start(SERVER_NAME, port);
     }
 
     static void banner() {
