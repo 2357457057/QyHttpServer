@@ -3,7 +3,7 @@ package top.yqingyu.httpserver.engine1;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.server$aio.Session;
@@ -208,7 +208,7 @@ class DoRequest implements Callable<HttpEventEntity> {
         HttpUtil.setMethod(request, info.get(0));
         HttpUtil.setUrl(request, info.get(1));
         HttpUtil.setHttpVersion(request, info.get(2));
-        int i = StringUtils.indexOf(request.getUrl(), '?');
+        int i = StringUtil.indexOf(request.getUrl(), '?');
         if (i != -1) {
             String substring = request.getUrl().substring(i + 1);
             HttpUtil.getUrlParam(request, substring);

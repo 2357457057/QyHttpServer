@@ -9,17 +9,16 @@ import io.netty.handler.codec.http.DefaultFullHttpRequest;
 import io.netty.handler.codec.http.FullHttpRequest;
 import io.netty.handler.codec.http.HttpHeaders;
 import io.netty.handler.codec.http.HttpMethod;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
+import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.*;
 
 import java.lang.reflect.Field;
 import java.net.InetSocketAddress;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -69,7 +68,7 @@ public class DoRequest extends SimpleChannelInboundHandler<FullHttpRequest> {
         qyReq.setUrl(uri);
         qyReq.setMethod(name);
         qyReq.setInetSocketAddress((InetSocketAddress) ctx.channel().remoteAddress());
-        int i = StringUtils.indexOf(uri, '?');
+        int i = StringUtil.indexOf(uri, '?');
         if (i != -1) {
             String substring = uri.substring(i + 1);
             HttpUtil.getUrlParam(qyReq, substring);

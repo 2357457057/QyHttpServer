@@ -8,7 +8,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToByteEncoder;
 import io.netty.handler.codec.http.*;
 import io.netty.handler.stream.ChunkedNioFile;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.qydata.ConcurrentDataMap;
@@ -102,7 +102,7 @@ public class DoResponse extends MessageToByteEncoder<HttpEventEntity> {
             return;
 
         String strBody = response.getStrBody();
-        if (StringUtils.isNotBlank(strBody)) {
+        if (StringUtil.isNotBlank(strBody)) {
             byte[] bytes = GzipUtil.$2CompressBytes(strBody, charset);
             response.setCompressByteBody(bytes);
             response.putHeaderContentLength(bytes.length).putHeaderCompress();

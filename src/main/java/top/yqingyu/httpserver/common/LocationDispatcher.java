@@ -1,7 +1,7 @@
 package top.yqingyu.httpserver.common;
 
 import com.alibaba.fastjson2.JSON;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.asm.impl.MethodParamGetter;
@@ -131,11 +131,10 @@ public class LocationDispatcher {
         if (file == null) {
             String s = FILE_RESOURCE_MAPPING.get(url);
             s = fillUrl(url, s, response);
-            if (StringUtils.isBlank(s)) {
+            if (StringUtil.isBlank(s)) {
                 removeResource(url);
                 file = fromDisk(url);
                 if (file == null) {
-                    HttpStatue.$404.setResponse(response);
                     return;
                 }
             } else {
@@ -267,7 +266,7 @@ public class LocationDispatcher {
                                 args[i] = request;
                             } else if (Response.class.getName().equals(typeName)) {
                                 args[i] = request;
-                            } else if (StringUtils.isNotBlank(urlParam.getString(paramName[i])) && ClazzUtil.canValueof(paramType)) {
+                            } else if (StringUtil.isNotBlank(urlParam.getString(paramName[i])) && ClazzUtil.canValueof(paramType)) {
                                 args[i] = urlParam.getString(paramName[i]);
                             } else if (MultipartFile.class.getName().equals(typeName)) {
                                 args[i] = request.getMultipartFile();

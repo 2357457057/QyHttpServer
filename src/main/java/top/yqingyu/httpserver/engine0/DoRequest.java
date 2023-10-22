@@ -2,7 +2,7 @@ package top.yqingyu.httpserver.engine0;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.ArrayUtils;
-import org.apache.commons.lang3.StringUtils;
+import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
@@ -144,7 +144,7 @@ class DoRequest implements Runnable {
                         flag = true;
                         HttpUtil.assembleHeader(request, bytes.get(0), netChannel);
                         // 当只收到消息头，且消息头有 Content-Length 且Content-Length在一定的范围内 此时需要
-                        if (bytes.size() == 1 && StringUtils.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
+                        if (bytes.size() == 1 && StringUtil.equalsIgnoreCase("0", request.getHeader().getString("Content-Length"))) {
                             Response response = $100.Response();
                             createResponse(request, response, true);
                         }
