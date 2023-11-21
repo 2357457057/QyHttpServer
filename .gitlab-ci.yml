@@ -7,8 +7,7 @@ git_sync:
   script: 
     - cd /data/mycode/QyHttpServer
     - git pull gitlab master
-    - git push gitee master
-
+    
 build-job:       # This job runs in the build stage, which runs first.
   stage: install
   script:
