@@ -15,37 +15,39 @@ import java.util.Stack;
 public class HttpUtil {
     public static void getUrlParam(Request qyReq, String substring) {
         String[] split = substring.split("&");
-        for (int j = 0; j < split.length; j++) {
-
-            String[] urlParamKV = split[j].split("=");
+        for (String s : split) {
+            String[] urlParamKV = s.split("=");
             if (urlParamKV.length == 2) qyReq.putUrlParam(urlParamKV[0], urlParamKV[1]);
-            else qyReq.putUrlParam("NoKey_" + j, split[j]);
+            else qyReq.putUrlParam(urlParamKV[0], "");
         }
     }
 
     public static void parseMultipartFile(byte[] boundaryBytes, byte[] temp, Stack<MultipartFile> multipartFileStack) throws IOException {
         ArrayList<byte[]> boundary = ArrayUtil.splitByTarget(temp, boundaryBytes);
-        if (!boundary.isEmpty() || !multipartFileStack.isEmpty()) {
-            for (int i = 0; i < boundary.size(); i++) {
-                if (i == 0 && !multipartFileStack.isEmpty()) {
-                    multipartFileStack.peek().write(boundary.get(0));
-                } else {
-                    ArrayList<byte[]> bytes = ArrayUtil.splitByTarget(boundary.get(i), ArrayUtil.RN_RN);
-                    if (!bytes.isEmpty()) {
-                        byte[] multiHeaderBytes = bytes.get(0);
-                        ArrayList<byte[]> multiHeader = ArrayUtil.splitByTarget(multiHeaderBytes, ArrayUtil.RN);
-                        if (multiHeader.size() == 2) {
-                            String Content_Disposition = new String(multiHeader.get(0), StandardCharsets.UTF_8);
-                            String[] Content_Dispositions = Content_Disposition.split("filename=\"");
-                            String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
-                            MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
-                            multipartFileStack.push(multipartFile);
-                            if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
-                        }
-                    }
-                }
+
+        if (boundary.isEmpty() & multipartFileStack.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < boundary.size(); i++) {
+            if (i == 0 && !multipartFileStack.isEmpty()) {
+                multipartFileStack.peek().write(boundary.get(0));
+            } else {
+                ArrayList<byte[]> bytes = ArrayUtil.splitByTarget(boundary.get(i), ArrayUtil.RN_RN);
+                if (bytes.isEmpty())
+                    continue;
+                byte[] multiHeaderBytes = bytes.get(0);
+                ArrayList<byte[]> multiHeader = ArrayUtil.splitByTarget(multiHeaderBytes, ArrayUtil.RN);
+                if (multiHeader.size() != 2)
+                    continue;
+                String Content_Disposition = new String(multiHeader.get(0), StandardCharsets.UTF_8);
+                String[] Content_Dispositions = Content_Disposition.split("filename=\"");
+                String fileName = StringUtil.removeEnd(Content_Dispositions[1], "\"");
+                MultipartFile multipartFile = new MultipartFile(fileName, "/tmp");
+                multipartFileStack.push(multipartFile);
+                if (bytes.size() == 2) multipartFileStack.peek().write(bytes.get(1));
             }
         }
+
     }
 
     public static void assembleHeader(Request request, byte[] header, Object channel) throws Exception {
@@ -115,7 +117,7 @@ public class HttpUtil {
     }
 
     public static void putHeader(Request request, byte[] key, byte[] obj) {
-       request.putHeader(key, obj);
+        request.putHeader(key, obj);
     }
 
 
