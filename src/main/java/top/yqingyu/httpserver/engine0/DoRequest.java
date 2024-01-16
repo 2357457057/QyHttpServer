@@ -2,13 +2,13 @@ package top.yqingyu.httpserver.engine0;
 
 import com.alibaba.fastjson2.JSON;
 import org.apache.commons.lang3.ArrayUtils;
-import top.yqingyu.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
 import top.yqingyu.common.server$nio.core.RebuildSelectorException;
 import top.yqingyu.common.utils.ArrayUtil;
 import top.yqingyu.common.utils.IoUtil;
+import top.yqingyu.common.utils.StringUtil;
 import top.yqingyu.httpserver.common.*;
 
 import java.io.IOException;
@@ -158,54 +158,57 @@ class DoRequest implements Runnable {
                 }
 
                 //body解析 当head已解析
-                if (flag) {
-                    long contentLength = request.getHeader().getLongValue("Content-Length", -1);
-
-                    //body超出最大值直接关闭连接
-                    if (contentLength > MAX_BODY_SIZE || all.length > MAX_BODY_SIZE) {
-                        return $413.Response();
-                    }
-
-                    //说明已经读完或读到头了
-                    if (currentLength < DEFAULT_BUF_LENGTH || all.length == currentLength) {
-                        int idx = firstIndexOfTarget(all, RN_RN);
-                        int efIdx = idx + RN_RN.length;
-                        //发生这个很奇怪。
-                        if (idx == -1) {
-                            return $400.Response();
-                            //最后一位
-                        } else if (efIdx == all.length) {
-                            HttpUtil.setParseEnd(request);
-                        } else {
-                            int currentContentLength = all.length - efIdx;
-                            String header = request.getHeader("Content-Type");
-                            ContentType parse = ContentType.parse(header);
-
-                            //文件上传逻辑
-                            if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
-                                if (!LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
-                                    netChannel.shutdownInput();
-                                    return $401.Response();
-                                }
-                                fileUpload(request, netChannel, parse, all, efIdx, currentContentLength, contentLength);
-
-                            } else {
-                                long ll = contentLength - currentContentLength;
-                                //去除多余的数据
-                                if (contentLength != -1) {
-                                    temp = IoUtil.readBytes2(netChannel, (int) ll);
-                                    byte[] body = new byte[(int) contentLength];
-                                    System.arraycopy(all, efIdx, body, 0, currentContentLength);
-                                    System.arraycopy(temp, 0, body, currentContentLength, (int) ll);
-                                    HttpUtil.setBody(request, body);
-                                    HttpUtil.setParseEnd(request);
-                                }
-
-                            }
-                        }
-
-                    }
+                if (!flag) {
+                    continue;
                 }
+
+                long contentLength = request.getHeader().getLongValue("Content-Length", -1);
+
+                //body超出最大值直接关闭连接
+                if (contentLength > MAX_BODY_SIZE || all.length > MAX_BODY_SIZE) {
+                    return $413.Response();
+                }
+
+                //说明已经读完或读到头了
+                if (currentLength < DEFAULT_BUF_LENGTH || all.length == currentLength) {
+                    int idx = firstIndexOfTarget(all, RN_RN);
+                    int efIdx = idx + RN_RN.length;
+                    //发生这个很奇怪。
+                    if (idx == -1) {
+                        return $400.Response();
+                        //最后一位
+                    } else if (efIdx == all.length) {
+                        HttpUtil.setParseEnd(request);
+                    } else {
+                        int currentContentLength = all.length - efIdx;
+                        String header = request.getHeader("Content-Type");
+                        ContentType parse = ContentType.parse(header);
+
+                        //文件上传逻辑
+                        if (ContentType.MULTIPART_FORM_DATA.isSameMimeType(parse) && ALLOW_UPDATE) {
+                            if (!LocationDispatcher.MULTIPART_BEAN_RESOURCE_MAPPING.containsKey(request.getUrl().split("[?]")[0])) {
+                                netChannel.shutdownInput();
+                                return $401.Response();
+                            }
+                            fileUpload(request, netChannel, parse, all, efIdx, currentContentLength, contentLength);
+
+                        } else {
+                            long ll = contentLength - currentContentLength;
+                            //去除多余的数据
+                            if (contentLength != -1) {
+                                temp = IoUtil.readBytes2(netChannel, (int) ll);
+                                byte[] body = new byte[(int) contentLength];
+                                System.arraycopy(all, efIdx, body, 0, currentContentLength);
+                                System.arraycopy(temp, 0, body, currentContentLength, (int) ll);
+                                HttpUtil.setBody(request, body);
+                                HttpUtil.setParseEnd(request);
+                            }
+
+                        }
+                    }
+
+                }
+
             }
         } while (request.isParseEnd() && all.length != 0);
         return request;
