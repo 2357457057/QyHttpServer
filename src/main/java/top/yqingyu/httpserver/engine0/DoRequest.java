@@ -1,7 +1,6 @@
 package top.yqingyu.httpserver.engine0;
 
 import com.alibaba.fastjson2.JSON;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import top.yqingyu.common.bean.NetChannel;
@@ -225,7 +224,7 @@ class DoRequest implements Runnable {
     static void fileUpload(Request request, NetChannel netChannel, ContentType parse, byte[] all, int efIdx, int currentContentLength, long contentLength) throws IOException, ExecutionException, InterruptedException, TimeoutException {
         String boundary = "--" + parse.getParameter("boundary") + "\r\n";
         byte[] boundaryBytes = boundary.getBytes();
-        byte[] temp = ArrayUtils.subarray(all, efIdx, all.length);
+        byte[] temp = ArrayUtil.subarray(all, efIdx, all.length);
 
         Stack<MultipartFile> multipartFileStack = new Stack<>();
         while (currentContentLength < contentLength) {
