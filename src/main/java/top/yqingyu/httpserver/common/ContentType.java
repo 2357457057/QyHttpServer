@@ -9,6 +9,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Locale;
+import java.util.HashMap;
 
 /**
  * @author YYJ
@@ -18,6 +19,27 @@ public class ContentType implements Serializable {
 
 
     private String adviceStatusCode;
+    public static final HashMap<String,ContentType> CONTENT_TYPE_MAP =  new HashMap<>(){{
+        put("js",APPLICATION_JS.setAdviceStatusCode("304"));
+        put("css",TEXT_CSS.setAdviceStatusCode("304"));
+        put("png",IMAGE_PNG.setAdviceStatusCode("304"));
+        put("jpg",IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("jpeg",IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("gif",IMAGE_GIF.setAdviceStatusCode("304"));
+        put("ico",IMAGE_X_ICON.setAdviceStatusCode("304"));
+        put("html",TEXT_HTML.setAdviceStatusCode("304"));
+        put("htm",TEXT_HTML.setAdviceStatusCode("304"));
+        put("pdf",APPLICATION_PDF);
+        put("md",TEXT_MARKDOWN);
+        put("webp",IMAGE_WEBP);
+        put("txt",TEXT_PLAIN);put("java",TEXT_PLAIN);put("yml",TEXT_PLAIN);put("yaml",TEXT_PLAIN);put("xml",TEXT_PLAIN);
+        put("properties",TEXT_PLAIN);put("cfg",TEXT_PLAIN);put("txt",TEXT_PLAIN);
+        put("wmv",VIDEO_WMV);
+        put("webm",VIDEO_WEBM);
+        put("avi",VIDEO_AVI);
+        put("mp3",AUDIO_MP3);
+        put("mp4",VIDEO_MP4);put("m4v",VIDEO_MP4);put("m4a",VIDEO_MP4);
+    }};
 
     public String getAdviceStatusCode() {
         return adviceStatusCode;
@@ -179,32 +201,8 @@ public class ContentType implements Serializable {
         if (extendName.length == 1) {
             return ContentType.TEXT_HTML;
         } else {
-            String code = "304";
-            return switch (extendName[extendName.length - 1]) {
-                case "js" -> APPLICATION_JS.setAdviceStatusCode(code);
-                case "css" -> TEXT_CSS.setAdviceStatusCode(code);
-                case "png" -> IMAGE_PNG.setAdviceStatusCode(code);
-                case "jpg", "jpeg" -> IMAGE_JPEG.setAdviceStatusCode(code);
-                case "gif" -> IMAGE_GIF.setAdviceStatusCode(code);
-                case "ico" -> IMAGE_X_ICON.setAdviceStatusCode(code);
-                case "html", "htm" -> TEXT_HTML.setAdviceStatusCode(code);
-                case "pdf" -> APPLICATION_PDF;
-                case "md" -> TEXT_MARKDOWN;
-                case "webp" -> IMAGE_WEBP;
-                case "txt", "java", "yml", "yaml", "xml", "properties" -> TEXT_PLAIN;
-                case "m4a", "m4v", "mp4" -> VIDEO_MP4;
-                case "doc", "docx", "xlsx", "xls", "ppt", "pptx",
-                        "exe", "apk", "msi", "rpm",
-                        "zip", "rar", "7z", "gz",
-                        "mkv", "iso",
-                        "srt", "SRT", "ass", "ASS", "SUB", "sub", "torrent", "TORRENT",
-                        "jar", "war", "class", "img" -> APPLICATION_OCTET_STREAM;
-                case "mp3" -> AUDIO_MP3;
-                case "avi" -> VIDEO_AVI;
-                case "webm" -> VIDEO_WEBM;
-                case "wmv" -> VIDEO_WMV;
-                default -> ContentType.TEXT_HTML;
-            };
+            ContentType rtn = CONTENT_TYPE_MAP.get(extendName[extendName.length - 1]);
+            return rtn == null ? APPLICATION_OCTET_STREAM : rtn;
         }
     }
 
