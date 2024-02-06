@@ -19,27 +19,6 @@ public class ContentType implements Serializable {
 
 
     private String adviceStatusCode;
-    public static final HashMap<String,ContentType> CONTENT_TYPE_MAP =  new HashMap<>(){{
-        put("js",APPLICATION_JS.setAdviceStatusCode("304"));
-        put("css",TEXT_CSS.setAdviceStatusCode("304"));
-        put("png",IMAGE_PNG.setAdviceStatusCode("304"));
-        put("jpg",IMAGE_JPEG.setAdviceStatusCode("304"));
-        put("jpeg",IMAGE_JPEG.setAdviceStatusCode("304"));
-        put("gif",IMAGE_GIF.setAdviceStatusCode("304"));
-        put("ico",IMAGE_X_ICON.setAdviceStatusCode("304"));
-        put("html",TEXT_HTML.setAdviceStatusCode("304"));
-        put("htm",TEXT_HTML.setAdviceStatusCode("304"));
-        put("pdf",APPLICATION_PDF);
-        put("md",TEXT_MARKDOWN);
-        put("webp",IMAGE_WEBP);
-        put("txt",TEXT_PLAIN);put("java",TEXT_PLAIN);put("yml",TEXT_PLAIN);put("yaml",TEXT_PLAIN);put("xml",TEXT_PLAIN);
-        put("properties",TEXT_PLAIN);put("cfg",TEXT_PLAIN);put("txt",TEXT_PLAIN);
-        put("wmv",VIDEO_WMV);
-        put("webm",VIDEO_WEBM);
-        put("avi",VIDEO_AVI);
-        put("mp3",AUDIO_MP3);
-        put("mp4",VIDEO_MP4);put("m4v",VIDEO_MP4);put("m4a",VIDEO_MP4);
-    }};
 
     public String getAdviceStatusCode() {
         return adviceStatusCode;
@@ -92,9 +71,31 @@ public class ContentType implements Serializable {
 
     public static final ContentType WILDCARD = create("*/*", (Charset) null);
 
-    // defaults
     public static final ContentType DEFAULT_TEXT = TEXT_PLAIN;
+    // defaults
     public static final ContentType DEFAULT_BINARY = APPLICATION_OCTET_STREAM;
+
+    public static final HashMap<String,ContentType> CONTENT_TYPE_MAP =  new HashMap<>(){{
+        put("js",APPLICATION_JS.setAdviceStatusCode("304"));
+        put("css",TEXT_CSS.setAdviceStatusCode("304"));
+        put("png",IMAGE_PNG.setAdviceStatusCode("304"));
+        put("jpg",IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("jpeg",IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("gif",IMAGE_GIF.setAdviceStatusCode("304"));
+        put("ico",IMAGE_X_ICON.setAdviceStatusCode("304"));
+        put("html",TEXT_HTML.setAdviceStatusCode("304"));
+        put("htm",TEXT_HTML.setAdviceStatusCode("304"));
+        put("pdf",APPLICATION_PDF);
+        put("md",TEXT_MARKDOWN);
+        put("webp",IMAGE_WEBP);
+        put("txt",TEXT_PLAIN);put("java",TEXT_PLAIN);put("yml",TEXT_PLAIN);put("yaml",TEXT_PLAIN);put("xml",TEXT_PLAIN);
+        put("properties",TEXT_PLAIN);put("cfg",TEXT_PLAIN);put("txt",TEXT_PLAIN);
+        put("wmv",VIDEO_WMV);
+        put("webm",VIDEO_WEBM);
+        put("avi",VIDEO_AVI);
+        put("mp3",AUDIO_MP3);
+        put("mp4",VIDEO_MP4);put("m4v",VIDEO_MP4);put("m4a",VIDEO_MP4);
+    }};
 
     private final String mimeType;
     private final Charset charset;
