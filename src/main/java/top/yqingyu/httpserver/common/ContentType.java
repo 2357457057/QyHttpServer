@@ -8,8 +8,8 @@ import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
-import java.util.Locale;
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * @author YYJ
@@ -75,26 +75,33 @@ public class ContentType implements Serializable {
     // defaults
     public static final ContentType DEFAULT_BINARY = APPLICATION_OCTET_STREAM;
 
-    public static final HashMap<String,ContentType> CONTENT_TYPE_MAP =  new HashMap<>(){{
-        put("js",APPLICATION_JS.setAdviceStatusCode("304"));
-        put("css",TEXT_CSS.setAdviceStatusCode("304"));
-        put("png",IMAGE_PNG.setAdviceStatusCode("304"));
-        put("jpg",IMAGE_JPEG.setAdviceStatusCode("304"));
-        put("jpeg",IMAGE_JPEG.setAdviceStatusCode("304"));
-        put("gif",IMAGE_GIF.setAdviceStatusCode("304"));
-        put("ico",IMAGE_X_ICON.setAdviceStatusCode("304"));
-        put("html",TEXT_HTML.setAdviceStatusCode("304"));
-        put("htm",TEXT_HTML.setAdviceStatusCode("304"));
-        put("pdf",APPLICATION_PDF);
-        put("md",TEXT_MARKDOWN);
-        put("webp",IMAGE_WEBP);
-        put("txt",TEXT_PLAIN);put("java",TEXT_PLAIN);put("yml",TEXT_PLAIN);put("yaml",TEXT_PLAIN);put("xml",TEXT_PLAIN);
-        put("properties",TEXT_PLAIN);put("cfg",TEXT_PLAIN);put("txt",TEXT_PLAIN);
-        put("wmv",VIDEO_WMV);
-        put("webm",VIDEO_WEBM);
-        put("avi",VIDEO_AVI);
-        put("mp3",AUDIO_MP3);
-        put("mp4",VIDEO_MP4);put("m4v",VIDEO_MP4);put("m4a",VIDEO_MP4);
+    public static final HashMap<String, ContentType> FILE_CONTENT_TYPE = new HashMap<>() {{
+        put("js", APPLICATION_JS.setAdviceStatusCode("304"));
+        put("css", TEXT_CSS.setAdviceStatusCode("304"));
+        put("png", IMAGE_PNG.setAdviceStatusCode("304"));
+        put("jpg", IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("jpeg", IMAGE_JPEG.setAdviceStatusCode("304"));
+        put("gif", IMAGE_GIF.setAdviceStatusCode("304"));
+        put("ico", IMAGE_X_ICON.setAdviceStatusCode("304"));
+        put("html", TEXT_HTML.setAdviceStatusCode("304"));
+        put("htm", TEXT_HTML.setAdviceStatusCode("304"));
+        put("xml", APPLICATION_XML);
+        put("pdf", APPLICATION_PDF);
+        put("md", TEXT_MARKDOWN);
+        put("webp", IMAGE_WEBP);
+        put("java", TEXT_PLAIN);
+        put("yml", TEXT_PLAIN);
+        put("yaml", TEXT_PLAIN);
+        put("properties", TEXT_PLAIN);
+        put("cfg", TEXT_PLAIN);
+        put("txt", TEXT_PLAIN);
+        put("wmv", VIDEO_WMV);
+        put("webm", VIDEO_WEBM);
+        put("avi", VIDEO_AVI);
+        put("mp3", AUDIO_MP3);
+        put("mp4", VIDEO_MP4);
+        put("m4v", VIDEO_MP4);
+        put("m4a", VIDEO_MP4);
     }};
 
     private final String mimeType;
@@ -200,10 +207,10 @@ public class ContentType implements Serializable {
         String fileName = s[s.length - 1];
         String[] extendName = fileName.split("[.]");
         if (extendName.length == 1) {
-            return ContentType.TEXT_HTML;
+            return DEFAULT_TEXT;
         } else {
-            ContentType rtn = CONTENT_TYPE_MAP.get(extendName[extendName.length - 1]);
-            return rtn == null ? APPLICATION_OCTET_STREAM : rtn;
+            ContentType rtn = FILE_CONTENT_TYPE.get(extendName[extendName.length - 1]);
+            return rtn == null ? DEFAULT_BINARY : rtn;
         }
     }
 
